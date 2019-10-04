@@ -1,0 +1,37 @@
+service: codeclimate-sync
+
+plugins:
+  - serverless-cloudside-plugin
+
+provider:
+  name: aws
+  runtime: python3.7
+
+functions:
+  enqueueAllAccounts:
+    handler: handler.enqueueAllAccounts
+    environment:
+      GITHUB_API_APP_ID: ${ssm:/aws/reference/secretsmanager/labby-github-api-app-id~true}
+      GITHUB_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-github-api-key~true}
+      CODE_CLIMATE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-code-climate-api-key~true}
+      DIRTY_REPOS_SQS_URL: !Ref DirtyReposQueue
+  
+  reconsileAccounts:
+    handler: handler.reconsile
+    environment:
+      GITHUB_API_APP_ID: ${ssm:/aws/reference/secretsmanager/labby-github-api-app-id~true}
+      GITHUB_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-github-api-key~true}
+      CODE_CLIMATE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-code-climate-api-key~true}
+    events:
+      - sqs:
+          arn: !GetAtt DirtyReposQueue.Arn
+          batchSize: 1
+      
+resources:
+  Resources:
+    DirtyReposQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "DirtyRepos"
+
+
