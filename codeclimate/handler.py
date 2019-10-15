@@ -9,11 +9,12 @@ import requests
 import boto3
 
 # Local imports
-from dao import metadata
-from dao import github
+from dao import metadata    as metadata_dao
+from dao import github      as github_dao
+from dao import codeclimate as codeclimate_dao
 
 def enqueue_all_accounts(event, context):
-    github_api = github.get_api()
+    github_api = github_dao.get_api()
 
     # The Github org to work with
     # TODO: Labby should be able to work with many orgs
@@ -34,7 +35,7 @@ def enqueue_all_accounts(event, context):
         response = sqs.send_message(
             QueueUrl=dirty_repos_queue,
             DelaySeconds=10,
-            MessageBody=str(repo.html_url)
+            MessageBody=str(repo.repository_slug)
         )
 
         print(response['MessageId'])
@@ -52,10 +53,25 @@ def enqueue_all_accounts(event, context):
     return response
 
 def reconsile_accounts(event, context):
-    print("Event:\n{}\nContext:\n{}".format(str(event), str(context)))
+    print("Processing incoming event\n{}".format(event))
+    
+    event_records = event['Records']
+    print("Processing {} events".format(len(event_records)))
+    
+    for record in event_records:
+        print("Processing event record\n{}".format(record))
+        repository_slug = record['body']
+        
+        print("Reconsiling repository: {}".format(repository_slug))
+        
+        if codeclimate_dao.is_repo_linked(repository_slug):
+            print("Repository is not yet linked to Code Climate")
+            
+        else:
+            print("Repository is already linked to Code Climate")
     
     body = {
-        "message": "Event:\n{}\nContext:\n{}".format(str(event), str(context)),
+        "message": "Done",
         "input": event
     }
 

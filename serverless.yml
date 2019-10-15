@@ -1,52 +1,78 @@
-service: codeclimate-sync
+service: labby
 
 plugins:
   - serverless-python-requirements
   - serverless-cloudside-plugin
+  - serverless-s3-deploy
+
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux
+
+  public-asset-bucket: labby-public-assets
+
+  assets:
+    auto: true
+    targets:
+      - bucket: ${self:custom.public-asset-bucket}
+        files:
+        - source: assets/
+          globs: '**/*'
+
 provider:
   name: aws
   runtime: python3.7
-  timeout: 60
+  timeout: 30
   tracing:
     lambda: true
   iamManagedPolicies:
     - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   iamRoleStatements:
-      - Effect: 'Allow'
-        Action:
-          - 'sqs:SendMessage'
-        Resource: !GetAtt DirtyReposQueue.Arn
+    - Effect: 'Allow'
+      Action:
+        - 'sqs:SendMessage'
+      Resource: !GetAtt DirtyReposQueue.Arn
+    - Effect: 'Allow'
+      Action:
+        - 's3:ListBucket'
+      Resource: "arn:aws:s3:::${self:custom.public-asset-bucket}"
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+        - s3:PutObjectAcl
+        - "s3:GetObject"
+        - "s3:DeleteObject"
+      Resource: "arn:aws:s3:::${self:custom.public-asset-bucket}/*"
+
   environment:
-      # Labby's Github App ID and Private Key
-      GITHUB_API_APP_ID: ${ssm:/aws/reference/secretsmanager/labby-github-integration-id~true}
-      GITHUB_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-github-api-key~true}
+    # Labby's Github App ID and Private Key
+    GITHUB_API_APP_ID: ${ssm:/aws/reference/secretsmanager/labby-github-integration-id~true}
+    GITHUB_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-github-api-key~true}
 
-      # ID of the Labby installation
-      #  - TODO: This should be a list of installations
-      #  - TODO: This doesn't need to be a secret
-      GITHUB_INSTALLATION_ID: ${ssm:/aws/reference/secretsmanager/labby-github-installation-id~true}
+    # ID of the Labby installation
+    #  - TODO: This should be a list of installations
+    #  - TODO: This doesn't need to be a secret
+    GITHUB_INSTALLATION_ID: ${ssm:/aws/reference/secretsmanager/labby-github-installation-id~true}
 
-      # The org that Labby works with
-      #  - TODO: Someday Labby should be able to work with many orgs
-      #  - TODO: This doesn't need to be a secret
-      GITHUB_ORG: ${ssm:/aws/reference/secretsmanager/labby-github-org~true}
-      
-      # A personal access token for Labby to use when it can't do something as the Github App
-      # Note: This is temporary until the Github App API catches up with the personal API
-      GITHUB_PERSONAL_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-github-personal-access-token~true}
+    # The org that Labby works with
+    #  - TODO: Someday Labby should be able to work with many orgs
+    #  - TODO: This doesn't need to be a secret
+    GITHUB_ORG: ${ssm:/aws/reference/secretsmanager/labby-github-org~true}
+    
+    # A personal access token for Labby to use when it can't do something as the Github App
+    # Note: This is temporary until the Github App API catches up with the personal API
+    GITHUB_PERSONAL_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-github-personal-access-token~true}
 
-      # # API key for getting into Airtable
-      AIRTABLE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-airtable-api-key~true}
+    # # API key for getting into Airtable
+    AIRTABLE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-airtable-api-key~true}
 
-      # # Locators for project repo information
-      # AIRTABLE_BASE_ID: ${ssm:/aws/reference/secretsmanager/labby-airtable-base-id~true}
-      # AIRTABLE_PROJECT_REPO_TABLE_NAME: ${ssm:/aws/reference/secretsmanager/labby-airtable-project-repo-table-name~true}
+    # # Locators for project repo information
+    # AIRTABLE_BASE_ID: ${ssm:/aws/reference/secretsmanager/labby-airtable-base-id~true}
+    # AIRTABLE_PROJECT_REPO_TABLE_NAME: ${ssm:/aws/reference/secretsmanager/labby-airtable-project-repo-table-name~true}
 
-      CODE_CLIMATE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-code-climate-api-key~true}
-  
-custom:
-  pythonRequirements:
-    dockerizePip: non-linux
+    CODE_CLIMATE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-code-climate-api-key~true}
+
+    SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-api-token~true}
 
 functions:
   enqueue_all_accounts:
@@ -66,15 +92,29 @@ functions:
           arn: !GetAtt DirtyReposQueue.Arn
           batchSize: 10
 
+  drop_quotes:
+    handler: dailyslackquotes/handler.drop_quotes
+    events:
+      - schedule: cron(0 15 ? * MON-FRI *)
+          
+
   # Reconsiles all Github repos with the stored metadata
   reconsile_all_project_github_repos:
     handler: projectrepos/handler.reconsile_all_project_github_repos
       
 resources:
   Resources:
+    # A queue for processing dirty Github repos
     DirtyReposQueue:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "DirtyRepos"
+
+    # A bucket for storing public-facing assets
+    PublicAssetBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.public-asset-bucket}
+        AccessControl: PublicRead
 
 
