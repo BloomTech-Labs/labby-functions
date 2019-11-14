@@ -35,30 +35,27 @@ Here are the secrets that need to be available for Labby:
 
 ### Github Credentials
 
-Labby interacts with Github as a [https://developer.github.com/apps/](Github App):
+Labby interacts with Github as a [Github App](https://developer.github.com/apps/):
 
-Secret Name: labby-github-api-app-id
-Secret Value: Client ID from the app settings (https://github.com/organizations/Lambda-School-Labs/settings/apps/lambda-labs-labby)
-
-Secret Name: labby-github-api-key
-Secret Value: The downloaded app private key (e.g. file://${HOME}/Downloads/lambda-labs-labby.2019-10-04.private-key.pem)
-
-Secret Name: labby-github-integration-id
-Secret Value: The integration ID created when installing the app
-
-Secret Name: labby-github-installation-id
-Secret Value: The installation ID created when installing the app
+Secret Name  | Secret Value
+------------ | -------------
+labby-github-api-app-id     | Client ID from the [app settings](https://github.com/organizations/Lambda-School-Labs/settings/apps/lambda-labs-labby)
+labby-github-api-key        | The downloaded app private key
+labby-github-integration-id | The integration ID created when installing the app
+labby-github-installation-id  | The installation ID created when installing the app
 
 ### Code Climate Credentials
 
-Labby interacts with the Code Climate API using an [https://developer.codeclimate.com/#overview](API key):
+Labby interacts with the Code Climate API using an [API key](https://developer.codeclimate.com/#overview):
 
-Secret Name: labby-code-climate-api-key
-Secret Value: Code Climate API key
+Secret Name  | Secret Value
+------------ | -------------
+labby-code-climate-api-key | Code Climate API key
 
-### Airtable Credentials
+## Airtable Credentials
 
 Labby interacts with Airtable using an [API key](https://airtable.com/api):
 
-Secret Name: labby-airtable-api-key
-Secret Value: Airtable API key
+Secret Name  | Secret Value
+------------ | -------------
+labby-airtable-api-key | Airtable API key
