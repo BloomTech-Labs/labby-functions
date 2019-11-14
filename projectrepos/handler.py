@@ -6,19 +6,22 @@ from enum import Enum
 
 # Local imports
 from dao import metadata
-from dao import github
+from dao import github as github_dao
+
+import github.GithubException
 
 # The repository naming convention requires a specific postfix depending on the purpose
 class RepositoryPurpose(Enum):
     FRONTEND        = "-fe"
     BACKEND         = "-be"
     DATA_SCIENCE    = "-ds"
+    MOBILE          = "-mobile"
     IOS             = "-ios"
     ANDROID         = "-android"
     SITE            = "-site"
 
-def reconsile_all_project_github_repos(event, context):
-    github_api = github.get_api()
+def reconcile_all_project_github_repos(event, context):
+    github_api = github_dao.get_api()
 
     # The Github org to work with
     # TODO: Labby should be able to work with many orgs
@@ -28,55 +31,59 @@ def reconsile_all_project_github_repos(event, context):
     product_github_repos = metadata.get_all_active()
 
     print("Processing {} repositories".format(len(product_github_repos)))
-    for record in product_github_repos:
-        if is_record_valid(record):  
-            print('============================================================================================================')
-            print("Processing record \n{}".format(record))
-
-            # Generate the standardized repository name
-            product_name = record['fields']['Product Name'][0]
-            repository_purpose = RepositoryPurpose[record['fields']['Purpose'].upper()]
-            repository_name = convert_to_repository_name(product_name, repository_purpose)
+    for record in product_github_repos:        
+        if not is_product_github_repo_record_valid(record):
+            print("Skipping invalid Product Github Repo record\n{}".format(record))
+            continue
+                
+        repository_name = generate_repository_name(record)
+        
+        if 'Repo ID' not in record['fields']:
+            # The repository ID is not known, see if a repository by the same name already exists
+            repository = None
+            try:
+                repository = github_api.get_repo("{}/{}".format(github_organization.login, repository_name))
+            except github.GithubException as e:
+                # print("Unable to get repository: {}/{}\n{}".format(github_organization.login, repository_name, e))
+                pass
             
-            repo_exists = github.does_repo_exist(github_organization, repository_name)
-            if repo_exists:
-                # Need to adopt the repo
-                print("Adopting: {}".format(repository_name))
+            if not repository:
+                # Need to create the repository
+                print("Creating repository: {}".format(repository_name))
+                
+                repository_purpose = repository_purpose = record['fields']['Purpose']
+                repository_id = github_dao.generate_repo(github_org_name, repository_name, repository_purpose)
+                
+                record_updates = {
+                    "Repo ID": repository_id,
+                } 
+                metadata.update(record['id'], record_updates)
+            else:
+                # Need to adopt the repository
+                print("Adopting repository: {}".format(repository_name))
 
                 record_updates = {
                     "Repo ID": github_organization.get_repo(repository_name).id,
-                    "Repo Name": repository_name
                 }
                 metadata.update(record['id'], record_updates)
-            else:
-                # Need to create the repo
-                print("Creating: {}".format(repository_name))
                 
-                repository_id = github.generate_repo(github_org_name, repository_name, record['fields']['Purpose'].upper())
+        # Does the repository exist and the ID is recorded?
+        # if repository:
+        #     pass
+            #  and 'Repo ID' in record['fields']:
+            # Make sure the repository name is correct
+            # if repository_name != repository.name:
+            #      print("Changing repository name from {} to {}".format(repository.name, repository_name))
+                 
+                # github_api.update()
                 
-                record_updates = {
-                        "Repo ID": repository_id,
-                        "Repo Name": repository_name
-                    }
-                    
-                metadata.update(record['id'], record_updates)
-            print('============================================================================================================\n')
-
-
-    body = {
-        "message": "Go Serverless v1.0! Your function executed successfully!",
-        "input": event
-    }
-
-    response = {
-        "statusCode": 200,
-        "body": json.dumps(body)
-    }
-
-    return response
-
-
-def is_record_valid(record) -> bool:
+                # record_updates = {
+                #     "Repo ID": github_organization.get_repo(repository_name).id,
+                #     "Repo Name": repository_name
+                # }
+                # metadata.update(record['id'], record_updates)
+    
+def is_product_github_repo_record_valid(record) -> bool:
     if 'Purpose' not in record['fields']:
         print("Found record missing purpose: {}".format(record['id']))
         return False
@@ -93,29 +100,27 @@ def is_record_valid(record) -> bool:
         print("Found record where Product Name is not a list with one value: {}".format(record['id']))
         return False
 
-    if 'Repo ID' in record['fields']:
-        print("Skipping record with Repo ID: {}".format(record['id']))
-        return False
-
     return True
 
     
-def convert_to_repository_name(product_name: str, repository_purpose: RepositoryPurpose):
+def generate_repository_name(record) -> str:
     """ 
-    Converts repository metadata into a repository name.
+    Generates repository name from a Product Github Repo record
 
     Parameters: 
-    productName (string): The name of the repository
-    repositoryPurpose (RepositoryPurpose): The purpose of the repository as RepositoryPurpose
+    record (string): A Product Github Repo record
 
     Returns: 
     str: Properly formatted repository name
     """
-    if product_name is None:
-        raise ValueError('Product name must be provided')
-
-    if repository_purpose is None:
-        raise ValueError('Repository purpose must be provided')
+    product_name = record['fields']['Product Name'][0]
+    
+    repository_purpose = record['fields']['Purpose']
+    repository_purpose_postfix = RepositoryPurpose[repository_purpose.upper()].value
+    
+    repository_custom_postfix = ""
+    if ('Postfix' in record['fields']):
+        repository_custom_postfix = record['fields']['Postfix']
     
     # Repository name starts with product name
     repository_name = product_name
@@ -123,6 +128,8 @@ def convert_to_repository_name(product_name: str, repository_purpose: Repository
     # Remove special characters
     repository_name = repository_name.replace("-", ' ')
     repository_name = repository_name.replace(":", ' ')
+    repository_name = repository_name.replace("'", '')
+    repository_name = repository_name.replace("!", '')
 
     # Remove extra spaces
     repository_name = " ".join(repository_name.split())
@@ -130,7 +137,10 @@ def convert_to_repository_name(product_name: str, repository_purpose: Repository
     # Convert spaces to dashes
     repository_name = repository_name.replace(" ", '-')
 
-    # Add the postfix
-    repository_name = repository_name + repository_purpose.value
+    # Add the custom postfix
+    repository_name = repository_name + repository_custom_postfix
+    
+    # Add the purpose postfix
+    repository_name = repository_name + repository_purpose_postfix
 
     return repository_name.lower()

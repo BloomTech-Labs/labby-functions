@@ -19,6 +19,7 @@ class RepositoryTemplate(Enum):
     DATA_SCIENCE    = "template-ds"
     IOS             = "template-ios"
     ANDROID         = "template-android"
+    MOBILE          = "template-android"
     SITE            = "template-site"
     
 def get_api():

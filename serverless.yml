@@ -81,26 +81,51 @@ functions:
       DIRTY_REPOS_SQS_URL: !Ref DirtyReposQueue
     events:
       - schedule:
-          name: reconsile-all-repos
-          description: 'Queue up all repositories periodically to be reconsiled'
-          rate: rate(5 minutes)
+          name: reconcile-all-repos
+          description: 'Queue up all repositories periodically to be reconciled'
+          rate: rate(60 minutes)
   
-  reconsile_accounts:
-    handler: codeclimate/handler.reconsile_accounts
+  reconcile_accounts:
+    handler: codeclimate/handler.reconcile_accounts
     events:
       - sqs:
           arn: !GetAtt DirtyReposQueue.Arn
           batchSize: 10
 
   drop_quotes:
-    handler: dailyslackquotes/handler.drop_quotes
+    handler: slackquotes/handler.drop_quotes
     events:
       - schedule: cron(0 15 ? * MON-FRI *)
           
+  # Handles reminding students about submitting peer reviews
+  remind_students_about_late_peer_reviews:
+    handler: peerreviews/handler.remind_students_about_late_peer_reviews
+    # events:
+    #   - schedule: cron(0 23 ? * FRI *)
 
-  # Reconsiles all Github repos with the stored metadata
-  reconsile_all_project_github_repos:
-    handler: projectrepos/handler.reconsile_all_project_github_repos
+  # Reconciles all Github repos with the stored metadata
+  reconcile_all_project_github_repos:
+    handler: projectrepos/handler.reconcile_all_project_github_repos
+    events:
+      - schedule:
+          name: reconcile-all-project-github-repos
+          description: 'Ensure Github repositories are synced with repository metadata store'
+          rate: rate(15 minutes)
+
+  # Handles Github push hook events
+  github_push_hook:
+    handler: githubhooks/handler.github_push_hook
+    events:
+      - http: POST github_push
+
+  # Reconciles all Github push events
+  reconcile_github_push_events:
+    handler: githubhooks/handler.reconcile_github_push_events
+
+  # Notifies interviewees to schedule their mock interview
+  notify_interviewees:
+    handler: mock_interviews/handler.notify_interviewees
+
       
 resources:
   Resources:
@@ -117,4 +142,14 @@ resources:
         BucketName: ${self:custom.public-asset-bucket}
         AccessControl: PublicRead
 
-
+    LabbyMemory: 
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: LabbyPersonMemory
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: person_smt_record_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: person_smt_record_id
+            KeyType: HASH
