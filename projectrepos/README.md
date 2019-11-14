@@ -10,7 +10,7 @@ This function is responsible for provisioning new repositories when needed. Labb
 
 Repositories are named with a specific naming convention: `<Product Name>-<Custom Postfix>-<Purpose>`
 
-- Special characters are removed from the final repository name for astethic reasons.
+- Special characters are removed from the final repository name for aesthetic reasons.
 - The custom postfix can be used to differentiate repositories for the same product with the same purpose.
 - The purpose is a special postfix to help identify the code in the repository:
   - FRONTEND        = "-fe"

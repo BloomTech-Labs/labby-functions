@@ -20,7 +20,7 @@ class RepositoryPurpose(Enum):
     ANDROID         = "-android"
     SITE            = "-site"
 
-def reconcile_all_project_github_repos(event, context):
+def provision_project_github_repos(event, context):
     github_api = github_dao.get_api()
 
     # The Github org to work with
@@ -66,22 +66,7 @@ def reconcile_all_project_github_repos(event, context):
                     "Repo ID": github_organization.get_repo(repository_name).id,
                 }
                 metadata.update(record['id'], record_updates)
-                
-        # Does the repository exist and the ID is recorded?
-        # if repository:
-        #     pass
-            #  and 'Repo ID' in record['fields']:
-            # Make sure the repository name is correct
-            # if repository_name != repository.name:
-            #      print("Changing repository name from {} to {}".format(repository.name, repository_name))
-                 
-                # github_api.update()
-                
-                # record_updates = {
-                #     "Repo ID": github_organization.get_repo(repository_name).id,
-                #     "Repo Name": repository_name
-                # }
-                # metadata.update(record['id'], record_updates)
+
     
 def is_product_github_repo_record_valid(record) -> bool:
     if 'Purpose' not in record['fields']:
