@@ -1,19 +1,96 @@
 # Third party imports
 from airtable import Airtable
 
-def get_all_active() -> list:
-  """
-  Retrieves all records repetitively and returns a single list.
-  
-  Returns:
-      records (``list``): List of Records
-  """
-  airtable = Airtable('appJ2MpPg4tBiJhOC', 'Product Github Repos')
+SMT_BASE_ID = 'appvMqcwCQosrsHhM'
 
-  return airtable.get_all(formula="Active = TRUE()")
+LABS_BASE_ID = 'appThDY89pV0kOGQT'
+LABS_CODE_CLIMATE_METRICS_TABLE = 'Code Climate Metrics'
+
+LABBY_BASE_ID = 'appJ2MpPg4tBiJhOC'
+
+
+def get_all_active() -> list:
+    """
+    Retrieves all records repetitively and returns a single list.
+
+    Returns:
+        records (``list``): An SMT record
+    """
+    airtable = Airtable(LABBY_BASE_ID, 'Product Github Repos')
+
+    return airtable.get_all(formula="Active = TRUE()")
+
 
 def update(record_id, record_fields) -> None:
-  airtable = Airtable('appJ2MpPg4tBiJhOC', 'Product Github Repos')
+    airtable = Airtable(LABBY_BASE_ID, 'Product Github Repos')
 
-  response = airtable.update(record_id, record_fields)
-  print(str(response))
+    airtable.update(record_id, record_fields)
+
+
+def get_all_active_students() -> list:
+    """
+    Retrieves all active student records
+
+    Returns:
+        records (``list``): List of student records
+    """
+    airtable = Airtable(LABS_BASE_ID, 'Students')
+
+    return airtable.get_all(fields='Name', formula="{Cohort Active?} = TRUE()")
+
+
+def get_students_by_sprint_retros_submission(days) -> list:
+    """
+    Retrieves a list of student sprint retro records submitted within the past # of _days_
+
+    Returns:
+        records (``list``): List of student sprint retro records
+    """
+    airtable = Airtable(LABS_BASE_ID, 'Students')
+
+    formula = "AND({{Cohort Active?}} = TRUE(), {{Name}} != '', {{Days Since Last Student Sprint Retro}} > {})".format(days)
+    return airtable.get_all(fields=['Name', 'Days Since Last Student Sprint Retro', 'SMT Record ID'], formula=formula, max_records=20)
+
+
+def get_all_product_github_repo_records():
+    airtable = Airtable(LABBY_BASE_ID, 'Product Github Repos')
+
+    return airtable.get_all()
+
+
+def update_repository_grade(repository_id: str, grade: str):
+    """
+    Updates the grade record for a repository
+    """
+    airtable = Airtable(LABS_BASE_ID, LABS_CODE_CLIMATE_METRICS_TABLE)
+
+    formula = "{{Repository ID}} = '{}'".format(repository_id)
+    records = airtable.get_all(formula=formula)
+
+    if len(records) == 0:
+        insert_repository_grade(repository_id, grade)
+        return
+    elif len(records) > 1:
+        raise Exception(
+            "Multiple records found for repository ID: {}".format(repository_id))
+
+    fields = {
+        "Grade": grade
+    }
+
+    airtable.update(records[0]['id'], fields)
+
+
+def insert_repository_grade(repository_id: str, grade: str):
+    """
+    Inserts a new grade record for repository
+    """
+    airtable = Airtable(LABS_BASE_ID, LABS_CODE_CLIMATE_METRICS_TABLE)
+
+    record = {
+        "Repository ID": repository_id,
+        "Grade": grade
+    }
+
+    airtable.insert(record)
+

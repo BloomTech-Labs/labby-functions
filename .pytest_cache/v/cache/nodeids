@@ -1,0 +1,6 @@
+[
+  "tests/test_slackquotes.py::test_is_channel_record_valid_no_input",
+  "tests/test_slackquotes.py::test_is_channel_record_valid_empty",
+  "tests/test_slackquotes.py::test_is_channel_record_valid_no_channel_name",
+  "tests/test_slackquotes.py::test_is_channel_record_valid_with_channel_name"
+]

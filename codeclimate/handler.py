@@ -1,67 +1,69 @@
+# Standard library imports
 import json
 import jwt
 import os
 from datetime import datetime
 from datetime import timedelta
-from github import Github
-from github import GithubIntegration
-import requests
+
+# Third party imports
 import boto3
+import requests
+from github import Github, UnknownObjectException, GithubIntegration
 
 # Local imports
-from dao import metadata
-from dao import github
+from dao import metadata    as metadata_dao
+from dao import github      as github_dao
+from dao import codeclimate as codeclimate_dao
+from dao import metadata    as metadata_dao
 
 def enqueue_all_accounts(event, context):
-    github_api = github.get_api()
-
-    # The Github org to work with
-    # TODO: Labby should be able to work with many orgs
-    github_org_name = os.environ["GITHUB_ORG"]
-    github_organization = github_api.get_organization(github_org_name)
-
-    # Get a list of all the repos in the org
-    repos = github_organization.get_repos(sort="full_name")
-
     # Get the queue ready
     sqs = boto3.client('sqs')
+    
+    github_api = github_dao.get_api()
+    
     dirty_repos_queue = os.environ["DIRTY_REPOS_SQS_URL"]
-
-    print("Queueing up {} repos into: {}".format(repos.totalCount, dirty_repos_queue))
+        
+    product_github_repo_records = metadata_dao.get_all_product_github_repo_records()
     
-    for repo in repos:
-        print("Queueing up {} into: {}".format(repo.full_name, dirty_repos_queue))
-        response = sqs.send_message(
-            QueueUrl=dirty_repos_queue,
-            DelaySeconds=10,
-            MessageBody=str(repo.html_url)
-        )
+    for product_github_repo_record in product_github_repo_records:
+        print("[{}] Processing record: {}".format(context.aws_request_id, product_github_repo_record))
+        
+        if "Repo ID" in product_github_repo_record['fields']:
+            repository_id = product_github_repo_record['fields']['Repo ID']
+            
+            try: 
+                repo = github_api.get_repo(repository_id)
+            except UnknownObjectException as unknown_object_exception:
+                print("Could not find repository with ID {}: {}".format(repository_id, unknown_object_exception))
+                continue
+                
+            github_slug = repo.full_name
 
-        print(response['MessageId'])
+            print("[{}] Queueing up repository with slug {} into SQS queue: {}".format(context.aws_request_id, github_slug, dirty_repos_queue))
+            response = sqs.send_message(
+                QueueUrl=dirty_repos_queue,
+                DelaySeconds=10,
+                MessageBody=str(github_slug)
+            )
 
-    body = {
-        "message": "Queued {} repos".format(repos.totalCount),
-        "input": event
-    }
+            print("[{}] Response from SQS: {}".format(context.aws_request_id, response))
 
-    response = {
-        "statusCode": 200,
-        "body": json.dumps(body)
-    }
 
-    return response
-
-def reconsile_accounts(event, context):
-    print("Event:\n{}\nContext:\n{}".format(str(event), str(context)))
+def reconcile_accounts(event, context):
+    print("Processing incoming event: {}".format(event))
     
-    body = {
-        "message": "Event:\n{}\nContext:\n{}".format(str(event), str(context)),
-        "input": event
-    }
-
-    response = {
-        "statusCode": 200,
-        "body": json.dumps(body)
-    }
-
-    return response
+    event_records = event['Records']
+    print("Processing {} events".format(len(event_records)))
+    
+    for record in event_records:
+        print("Processing event record: {}".format(record))
+        repository_id = record['body']
+        
+        repository_gpa = codeclimate_dao.get_most_recent_gpa(repository_id)
+        
+        print("GPA for repository {}: {}".format(repository_id, repository_gpa))
+        
+        metadata_dao.update_repository_grade(repository_id, repository_gpa)
+        
+        
