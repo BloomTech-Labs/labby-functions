@@ -1,10 +1,10 @@
 # Labby
 
-## What is this
+## Overview
 
 Labby is a growing collection of automation functions that support Lambda Labs operations.
 
-## Implementation
+## Architecture
 
 Labby is a serverless application built on the [Serverless Framework](https://serverless.com) currently deployed to AWS. Labby uses various AWS services to allow for scale and reliability.
 
@@ -43,9 +43,11 @@ Secret Value: Client ID from the app settings (https://github.com/organizations/
 Secret Name: labby-github-api-key
 Secret Value: The downloaded app private key (e.g. file://${HOME}/Downloads/lambda-labs-labby.2019-10-04.private-key.pem)
 
-aws secretsmanager create-secret --name labby-github-integration-id --secret-string <Integration ID>
+Secret Name: labby-github-integration-id
+Secret Value: The integration ID created when installing the app
 
-aws secretsmanager create-secret --name labby-github-installation-id --secret-string <Installation ID>
+Secret Name: labby-github-installation-id
+Secret Value: The installation ID created when installing the app
 
 ### Code Climate Credentials
 
@@ -53,7 +55,6 @@ Labby interacts with the Code Climate API using an [https://developer.codeclimat
 
 Secret Name: labby-code-climate-api-key
 Secret Value: Code Climate API key
-
 
 ### Airtable Credentials
 
