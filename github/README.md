@@ -19,13 +19,13 @@ Repositories are named with a specific naming convention: `<Product Name>-<Custo
 - Special characters are removed from the final repository name for aesthetic reasons.
 - The custom postfix can be used to differentiate repositories for the same product with the same purpose.
 - The purpose is a special postfix to help identify the code in the repository:
-  - FRONTEND        = "-fe"
-  - BACKEND         = "-be"
-  - DATA_SCIENCE    = "-ds"
-  - MOBILE          = "-mobile"
-  - IOS             = "-ios"
-  - ANDROID         = "-android"
-  - SITE            = "-site"
+  - FRONTEND = "-fe"
+  - BACKEND = "-be"
+  - DATA_SCIENCE = "-ds"
+  - MOBILE = "-mobile"
+  - IOS = "-ios"
+  - ANDROID = "-android"
+  - SITE = "-site"
 
 ## Gathering Metrics
 

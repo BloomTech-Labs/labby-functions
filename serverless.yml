@@ -16,8 +16,8 @@ custom:
     targets:
       - bucket: ${self:custom.public-asset-bucket}
         files:
-        - source: assets/
-          globs: '**/*'
+          - source: assets/
+            globs: "**/*"
 
 provider:
   name: aws
@@ -28,13 +28,13 @@ provider:
   iamManagedPolicies:
     - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   iamRoleStatements:
-    - Effect: 'Allow'
+    - Effect: "Allow"
       Action:
-        - 'sqs:SendMessage'
+        - "sqs:SendMessage"
       Resource: !GetAtt DirtyReposQueue.Arn
-    - Effect: 'Allow'
+    - Effect: "Allow"
       Action:
-        - 's3:ListBucket'
+        - "s3:ListBucket"
       Resource: "arn:aws:s3:::${self:custom.public-asset-bucket}"
     - Effect: Allow
       Action:
@@ -58,7 +58,7 @@ provider:
     #  - TODO: Someday Labby should be able to work with many orgs
     #  - TODO: This doesn't need to be a secret
     GITHUB_ORG: ${ssm:/aws/reference/secretsmanager/labby-github-org~true}
-    
+
     # A personal access token for Labby to use when it can't do something as the Github App
     # Note: This is temporary until the Github App API catches up with the personal API
     GITHUB_PERSONAL_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-github-personal-access-token~true}
@@ -82,9 +82,9 @@ functions:
     events:
       - schedule:
           name: reconcile-all-repos
-          description: 'Queue up all repositories periodically to be reconciled'
+          description: "Queue up all repositories periodically to be reconciled"
           rate: rate(60 minutes)
-  
+
   reconcile_accounts:
     handler: codeclimate/handler.reconcile_accounts
     events:
@@ -96,7 +96,7 @@ functions:
     handler: slackquotes/handler.drop_quotes
     events:
       - schedule: cron(0 15 ? * MON-FRI *)
-          
+
   # Handles reminding students about submitting peer reviews
   remind_students_about_late_peer_reviews:
     handler: peerreviews/handler.remind_students_about_late_peer_reviews
@@ -109,7 +109,7 @@ functions:
     events:
       - schedule:
           name: reconcile-all-project-github-repos
-          description: 'Ensure Github repositories are synced with repository metadata store'
+          description: "Ensure Github repositories are synced with repository metadata store"
           rate: rate(15 minutes)
 
   # Handles Github push hook events
@@ -126,7 +126,6 @@ functions:
   notify_interviewees:
     handler: mock_interviews/handler.notify_interviewees
 
-      
 resources:
   Resources:
     # A queue for processing dirty Github repos
@@ -142,7 +141,7 @@ resources:
         BucketName: ${self:custom.public-asset-bucket}
         AccessControl: PublicRead
 
-    LabbyMemory: 
+    LabbyMemory:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: LabbyPersonMemory
