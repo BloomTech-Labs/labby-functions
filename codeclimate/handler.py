@@ -1,3 +1,7 @@
+"""Manages the Lambda Labs integration with Code Climate.
+
+This module contains AWS Lambda function handlers.
+"""
 # Standard library imports
 import json
 import jwt
@@ -16,7 +20,18 @@ from dao import github      as github_dao
 from dao import codeclimate as codeclimate_dao
 from dao import metadata    as metadata_dao
 
-def enqueue_all_accounts(event, context):
+def enqueue_all_product_repos():
+    """Gets a list of all current product repositories and queues them up in SQS for processing.
+
+    Args:
+        None
+
+    Returns:
+        None
+
+    Raises:
+        Nothing
+    """
     # Get the queue ready
     sqs = boto3.client('sqs')
     
@@ -27,7 +42,7 @@ def enqueue_all_accounts(event, context):
     product_github_repo_records = metadata_dao.get_all_product_github_repo_records()
     
     for product_github_repo_record in product_github_repo_records:
-        print("[{}] Processing record: {}".format(context.aws_request_id, product_github_repo_record))
+        print("Processing record: {}".format(product_github_repo_record))
         
         if "Repo ID" in product_github_repo_record['fields']:
             repository_id = product_github_repo_record['fields']['Repo ID']
@@ -40,17 +55,35 @@ def enqueue_all_accounts(event, context):
                 
             github_slug = repo.full_name
 
-            print("[{}] Queueing up repository with slug {} into SQS queue: {}".format(context.aws_request_id, github_slug, dirty_repos_queue))
+            print("Queueing up repository with slug {} into SQS queue: {}".format(github_slug, dirty_repos_queue))
             response = sqs.send_message(
                 QueueUrl=dirty_repos_queue,
                 DelaySeconds=10,
                 MessageBody=str(github_slug)
             )
 
-            print("[{}] Response from SQS: {}".format(context.aws_request_id, response))
+            print("Response from SQS: {}".format(response))
 
 
-def reconcile_accounts(event, context):
+def gather_code_climate_metrics(event):
+    """Processes a batch of messages containing Github repository IDs, gathering Code Climate metrics for each repository.
+    
+    Each repository in the batch is first checked to see if it is already integrated with Code Climate, if not the repository is added to Code Climate using the Code Climate API.
+    
+    If there are metrics for the repository, they are extracted and stored in the Labs API.
+    
+    Metrics:
+    - Overall repository GPA
+
+    Args:
+        event: AWS Lambda handler event
+
+    Returns:
+        None
+
+    Raises:
+        Nothing
+    """
     print("Processing incoming event: {}".format(event))
     
     event_records = event['Records']
