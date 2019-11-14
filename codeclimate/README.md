@@ -1,4 +1,4 @@
-# Manage Code Climate Integration
+# Code Climate
 
 Code Climate is becoming an important resource for measuring code quality for our products, which allows us to better understand team and individual student capabilities.
 
@@ -10,6 +10,8 @@ Metrics:
 
 - Overall repository GPA
 
-### Implementation Notes
-
 This function is implemented using the fanout pattern, where SQS is used to queue up the list of repositories to be processed that are then processed in parallel batches by another Lambda function.
+
+## Code Climate DAO
+
+The DAO in this module enables easy access to the Code Climate API.

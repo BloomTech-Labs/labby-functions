@@ -2,40 +2,62 @@
 
 ## What is this
 
-A bunch of AWS Lambda Functions for automating various processes related to the Lambda School Labs program.
+Labby is a growing collection of automation functions that support Lambda Labs operations.
 
-## DAO
+## Implementation
 
-This little package is meant to abstract away some of the underlying technologies that make Labs tick. For example, much of our data is in Airtable, but not for long. The goal of the DAO layer is to insulate the functions a little to they don't need to call the Airtable client directly, but just see the output. This way, when we ditch Airtable, the functions won't need to change much.
+Labby is a serverless application built on the [Serverless Framework](https://serverless.com) currently deployed to AWS. Labby uses various AWS services to allow for scale and reliability.
 
-## Where's the code
+## Packages
 
-Packages (folders) are used to separate various capabilities. They are more or less organized by business function. The modules inside the packages should all basically relate to the business function described in the package.
+The packages in Labby are broken up by the various services that Labby manages. Though, given that Labby enables integration between various services, the code in each package will probably reference other services.
 
-## What do these packages do
+See the README in each package for more details.
 
-### Mock Interviews
+- Github: Manages provisioning and access to repositories based on active projects and team membership.
+- Code Climate: Labs uses Code Climate to assess code quality, Labby helps integrate with Code Climate and gathers metrics.
+- Slack: Allows Labby to interact with students and staff via Slack
+- Mock Interviews: Labby helps with the Labs Mock Interview process
+- Peer Reviews: Labby monitors peer review submissions (or lack thereof) to remind students and staff to submit their reviews.
+- Labs Data: Much of Labby's activities are driven by data produced by operational activities in Labs.
 
-Mock interviews are an essential part of how Labs works. There's a process by which students are identified and scheduled for these interviews. The modules in this package help by notifying various parties to make sure the interview happens on schedule.
+## Configuration
 
-### Peer Reviews
+Labby needs access to all sorts of APIs and data stores, which require secrets. These secrets are managed via AWS Secrets Manager.
 
-Each week, students
+Adding a secret:
 
+```shell
+aws secretsmanager create-secret --name <secret-name> --secret-string <secret-value>
+```
 
-aws secretsmanager create-secret --name labby-github-api-app-id --secret-string <Client ID>
-https://github.com/organizations/Lambda-School-Labs/settings/apps/lambda-labs-labby
+Here are the secrets that need to be available for Labby:
 
-aws secretsmanager create-secret --name labby-github-api-key --secret-string file://${HOME}/Downloads/lambda-labs-labby.2019-10-04.private-key.pem
+### Github Credentials
 
-sls invoke local --function syncReposWithCodeClimate
+Labby interacts with Github as a [https://developer.github.com/apps/](Github App):
 
-aws secretsmanager create-secret --name labby-code-climate-api-key --secret-string <API KEY>
+Secret Name: labby-github-api-app-id
+Secret Value: Client ID from the app settings (https://github.com/organizations/Lambda-School-Labs/settings/apps/lambda-labs-labby)
 
-serverless plugin install --name serverless-cloudside-plugin
-
-aws secretsmanager create-secret --name labby-airtable-api-key --secret-string <Airtable API Key>
+Secret Name: labby-github-api-key
+Secret Value: The downloaded app private key (e.g. file://${HOME}/Downloads/lambda-labs-labby.2019-10-04.private-key.pem)
 
 aws secretsmanager create-secret --name labby-github-integration-id --secret-string <Integration ID>
 
 aws secretsmanager create-secret --name labby-github-installation-id --secret-string <Installation ID>
+
+### Code Climate Credentials
+
+Labby interacts with the Code Climate API using an [https://developer.codeclimate.com/#overview](API key):
+
+Secret Name: labby-code-climate-api-key
+Secret Value: Code Climate API key
+
+
+### Airtable Credentials
+
+Labby interacts with Airtable using an [API key](https://airtable.com/api):
+
+Secret Name: labby-airtable-api-key
+Secret Value: Airtable API key
