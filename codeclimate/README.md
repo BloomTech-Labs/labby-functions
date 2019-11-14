@@ -7,7 +7,8 @@ Code Climate is becoming an important resource for measuring code quality for ou
 This function is responsible for periodically gathering and storing high level Code Climate metrics for use by various reporting and operational tools.
 
 Metrics:
-    - Overall repository GPA
+
+- Overall repository GPA
 
 ### Implementation Notes
 
