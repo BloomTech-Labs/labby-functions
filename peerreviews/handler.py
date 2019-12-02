@@ -5,12 +5,12 @@ import pprint
 
 from enum import Enum
 
-# Third parth imports
+# Third party imports
 import slack
 from slack.errors import SlackApiError
 
 # Local imports
-from dao import metadata
+from labsdao import people
 
 USERNAME = 'Labby'
 ICON_URL = 'https://labby-public-assets.s3.amazonaws.com/labby-small.png'
@@ -18,8 +18,14 @@ ICON_URL = 'https://labby-public-assets.s3.amazonaws.com/labby-small.png'
 DAYS_LATE_BEFORE_WARNING = 90
 
 def remind_students_about_late_peer_reviews(event, context):
+    """[summary]
+    
+    Arguments:
+        event {[type]} -- [description]
+        context {[type]} -- [description]
+    """
     # Grab a list of all currently active students
-    students = metadata.get_students_by_sprint_retros_submission(DAYS_LATE_BEFORE_WARNING)
+    students = people.get_students_by_sprint_retros_submission(DAYS_LATE_BEFORE_WARNING)
     
     # TODO: This is the legacy method for authenticating to the API
     print("Getting slack client")
@@ -33,7 +39,7 @@ def remind_students_about_late_peer_reviews(event, context):
             pprint.pprint(student_record)
             continue
         
-        smt_record = metadata.get_smt_record(student_record['fields']['SMT Record ID'][0])
+        smt_record = people.get_smt_record(student_record['fields']['SMT Record ID'][0])
         
         if not is_smt_record_valid(smt_record):
             print("Bad SMT Student Record")

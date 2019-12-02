@@ -11,7 +11,7 @@ import slack
 from slack.errors import SlackApiError
 
 # Local imports
-from dao import people
+from labsdao import people
 
 USERNAME = 'Labby'
 ICON_URL = 'https://labby-public-assets.s3.amazonaws.com/labby-small.png'

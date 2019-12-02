@@ -22,6 +22,12 @@ def get_all_active() -> list:
 
 
 def update(record_id, record_fields) -> None:
+    """[summary]
+
+    Arguments:
+        record_id {[type]} -- [description]
+        record_fields {[type]} -- [description]
+    """
     airtable = Airtable(LABBY_BASE_ID, 'Product Github Repos')
 
     airtable.update(record_id, record_fields)
@@ -53,6 +59,11 @@ def get_students_by_sprint_retros_submission(days) -> list:
 
 
 def get_all_product_github_repo_records():
+    """[summary]
+
+    Returns:
+        [type] -- [description]
+    """
     airtable = Airtable(LABBY_BASE_ID, 'Product Github Repos')
 
     return airtable.get_all()
@@ -93,4 +104,3 @@ def insert_repository_grade(repository_id: str, grade: str):
     }
 
     airtable.insert(record)
-

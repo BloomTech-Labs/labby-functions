@@ -31,7 +31,8 @@ def get_most_recent_gpa(github_slug: str) -> str:
     Returns:
         str -- A letter grade or None if the grade isn't available
     """
-    url = "https://api.codeclimate.com/v1/repos?github_slug={}".format(github_slug)
+    url = "https://api.codeclimate.com/v1/repos?github_slug={}".format(
+        github_slug)
     print("Sending GET requestion to: {}".format(url))
 
     response = requests.get(headers=__get_headers(), url=url)
@@ -52,7 +53,7 @@ def get_most_recent_gpa(github_slug: str) -> str:
             or 'data' not in relationships['latest_default_branch_snapshot']
             or not relationships['latest_default_branch_snapshot']['data']
             or 'id' not in relationships['latest_default_branch_snapshot']['data']
-            ):
+        ):
         return None
 
     repo_id = response_json['data'][0]['id']
@@ -66,7 +67,7 @@ def get_most_recent_gpa(github_slug: str) -> str:
     if ('data' not in snapshot_json
             or 'attributes' not in snapshot_json['data']
             or 'ratings' not in snapshot_json['data']['attributes']
-            ):
+        ):
         return None
 
     ratings = snapshot_json['data']['attributes']['ratings']
@@ -96,10 +97,10 @@ def get_snapshot(repository_id: str, snapshot_id: str) -> dict:
 
     print("[GET_SNAPSHOT] Sending GET requestion to: {}".format(url))
     response = requests.get(headers=__get_headers(), url=url)
-     print("[GET_SNAPSHOT] Response from GET to {}: {}-{}".format(url,
-                                                                   response, response.text))
+    print("[GET_SNAPSHOT] Response from GET to {}: {}-{}".format(url,
+                                                                 response, response.text))
 
-      return response.json()
+    return response.json()
 
 
 def add_repo_to_code_climate(github_slug) -> bool:
@@ -115,7 +116,7 @@ def add_repo_to_code_climate(github_slug) -> bool:
     }
 
     print("Posting to URL {}: {}".format(url, json.dumps(body)))
-    response = requests.post(headers=get_headers(), url=url, json=body)
+    response = requests.post(headers=__get_headers(), url=url, json=body)
 
     print("Response from post to URL {}: {} - {}".format(url,
                                                          response.status_code, response.text))

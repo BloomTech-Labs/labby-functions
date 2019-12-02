@@ -59,3 +59,7 @@ Labby interacts with Airtable using an [API key](https://airtable.com/api):
 | Secret Name            | Secret Value     |
 | ---------------------- | ---------------- |
 | labby-airtable-api-key | Airtable API key |
+
+## Labby Assets
+
+The `assets` folder contains various static assets for use by the functions. Be aware that during deployment the `serverless-s3-deploy` plugin will automatically ship _everything in the assets folder_ to a _public, readable by the whole wide world web_ S3 bucket.
