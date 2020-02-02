@@ -1,10 +1,10 @@
 service: labby
 
 plugins:
-  # https://github.com/UnitedIncome/serverless-python-requirements
   - serverless-python-requirements
   - serverless-cloudside-plugin
   - serverless-s3-deploy
+  - serverless-offline
 
 package:
   exclude:
@@ -32,15 +32,13 @@ provider:
   name: aws
   runtime: python3.7
   timeout: 30
-  tracing:
-    lambda: true
   iamManagedPolicies:
     - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   iamRoleStatements:
     - Effect: "Allow"
       Action:
         - "sqs:SendMessage"
-      Resource: !GetAtt CodeClimateRepoWorkerQueue.Arn
+      Resource: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
     - Effect: "Allow"
       Action:
         - "s3:ListBucket"
@@ -54,58 +52,62 @@ provider:
       Resource: "arn:aws:s3:::${self:custom.public-asset-bucket}/*"
 
   environment:
-    # Labby's Github App ID and Private Key
-    GITHUB_API_APP_ID: ${ssm:/aws/reference/secretsmanager/labby-github-integration-id~true}
-    GITHUB_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-github-api-key~true}
+    # Labby's Github App ID and Private Key for authenticating as an app
+    GITHUB_APP_INTEGRATION_ID: ${ssm:/aws/reference/secretsmanager/labby-github-app-integration-id~true}
+    GITHUB_APP_PRIVATE_KEY: ${ssm:/aws/reference/secretsmanager/labby-github-app-private-key~true}
 
-    # ID of the Labby installation
+    # ID of the Labby installation on the Lambda-School-Labs org
     #  - TODO: This should be a list of installations
     #  - TODO: This doesn't need to be a secret
-    GITHUB_INSTALLATION_ID: ${ssm:/aws/reference/secretsmanager/labby-github-installation-id~true}
+    GITHUB_APP_ORG_INSTALLATION_ID: ${ssm:/aws/reference/secretsmanager/labby-github-app-org-installation-id~true}
 
     # The org that Labby works with
     #  - TODO: Someday Labby should be able to work with many orgs
     #  - TODO: This doesn't need to be a secret
-    GITHUB_ORG: ${ssm:/aws/reference/secretsmanager/labby-github-org~true}
+    GITHUB_ORG_NAME: ${file(.env.yml):GITHUB_ORG_NAME}
 
     # A personal access token for Labby to use when it can't do something as the Github App
     # Note: This is temporary until the Github App API catches up with the personal API
-    GITHUB_PERSONAL_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-github-personal-access-token~true}
+    # GITHUB_PERSONAL_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-github-personal-access-token~true}
 
     # API key for Airtable
-    AIRTABLE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-airtable-api-key~true}
+    # AIRTABLE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-airtable-api-key~true}
 
-    # API key for Code Climate
-    CODE_CLIMATE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-code-climate-api-key~true}
+    CODE_CLIMATE_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-code-climate-access-token~true}
 
     # API key for Slack
-    SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-api-token~true}
+    # SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-api-token~true}
 
 functions:
   codeclimate_enqueue_all_product_repos:
-    handler: codeclimate/handler.enqueue_all_product_repos
+    handler: labscodeclimate/handler.enqueue_all_product_repos
     description: Gets a list of all current product repositories and queues them up in SQS for processing.
     environment:
-      CODECLIMATE_REPO_WORKER_SQS_URL: !Ref CodeClimateRepoWorkerQueue
+      CODECLIMATE_REPO_WORKER_SQS_URL: !Ref QueueCodeClimateRepoWorkerQueue
     events:
-      - schedule:
-          name: codeclimate_enqueue_all_product_repos
-          description: "Runs codeclimate_enqueue_all_product_repos"
-          rate: rate(15 minutes)
+      - schedule: rate(1 hours)
 
-  codeclimate_gather_code_climate_metrics:
-    handler: codeclimate/handler.gather_code_climate_metrics
-    description: Processes a batch of messages containing Github repository IDs, gathering Code Climate metrics for each repository.
+  codeclimate_add_repositories:
+    handler: labscodeclimate/handler.add_repositories
+    description: Processes messages containing Github repository names, ensures each has been added to Code Climate
     events:
       - sqs:
-          arn: !GetAtt CodeClimateRepoWorkerQueue.Arn
+          arn: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
           batchSize: 10
 
-  slack_drop_quotes:
-    handler: slack/quotes.drop_quotes
-    description: Drops quotes into specified Slack channels.
-    events:
-      - schedule: cron(0 15 ? * MON-FRI *)
+  # codeclimate_gather_code_climate_metrics:
+  #   handler: codeclimate/handler.gather_code_climate_metrics
+  #   description: Processes a batch of messages containing Github repository IDs, gathering Code Climate metrics for each repository.
+  #   events:
+  #     - sqs:
+  #         arn: !GetAtt CodeClimateRepoWorkerQueue.Arn
+  #         batchSize: 10
+
+  # slack_drop_quotes:
+  #   handler: slack/quotes.drop_quotes
+  #   description: Drops quotes into specified Slack channels.
+  #   events:
+  #     - schedule: cron(0 15 ? * MON-FRI *)
 
   # Under construction
   # remind_students_about_late_peer_reviews:
@@ -113,19 +115,19 @@ functions:
   #   events:
   #     - schedule: cron(0 23 ? * FRI *)
 
-  github_repos_provision_product_repos:
-    handler: github/repos.provision_product_repos
-    description: Ensures all product repos are provisioned or adopted.
-    events:
-      - schedule:
-          name: reconcile-all-github_provision_product_repos-github-repos
-          description: "Runs github_provision_product_repos"
-          rate: rate(15 minutes)
+  # github_repos_provision_product_repos:
+  #   handler: github/repos.provision_product_repos
+  #   description: Ensures all product repos are provisioned or adopted.
+  #   events:
+  #     - schedule:
+  #         name: reconcile-all-github_provision_product_repos-github-repos
+  #         description: "Runs github_provision_product_repos"
+  #         rate: rate(15 minutes)
 
-  github_metrics_push_hook:
-    handler: github/metrics.push_hook
-    events:
-      - http: POST github_push
+  # github_metrics_push_hook:
+  #   handler: github/metrics.push_hook
+  #   events:
+  #     - http: POST github_push
 
   # Under construction
   # github_reconcile_push_events:
@@ -139,10 +141,39 @@ functions:
 resources:
   Resources:
     # For queuing up jobs for the Code Climate Repo
-    CodeClimateRepoWorkerQueue:
+    QueueCodeClimateRepoWorkerQueue:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "CodeClimateRepoWorkerQueue"
+        DelaySeconds: 60
+
+    SecretLabbyGithubAppIntegrationID:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: labby-github-app-integration-id
+        Description: The App ID of the Labby app from the About page
+        SecretString: ${file(.env.yml):GITHUB_APP_INTEGRATION_ID}
+
+    SecretLabbyGithubAppPrivateKey:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: labby-github-app-private-key
+        Description: A private key that can be used to authenticate a Labby installation
+        SecretString: ${file(.env.yml):GITHUB_APP_PRIVATE_KEY}
+    
+    SecretLabbyGithubAppOrgInstallationID:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: labby-github-app-org-installation-id
+        Description: The ID of the Labby installation on the Lambda-School-Labs org
+        SecretString: ${file(.env.yml):GITHUB_APP_ORG_INSTALLATION_ID}
+
+    SecretLabbyCodeClimateAccessToken:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: labby-code-climate-access-token
+        Description: Access token for Code Climate
+        SecretString: ${file(.env.yml):CODE_CLIMATE_ACCESS_TOKEN}
 
     # A bucket for storing public-facing assets
     PublicAssetBucket:
@@ -153,14 +184,14 @@ resources:
 
     # A place for Labby to remember stuff
     # This is ephemeral state information for Labby
-    LabbyMemory:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: LabbyPersonMemory
-        BillingMode: PAY_PER_REQUEST
-        AttributeDefinitions:
-          - AttributeName: person_smt_record_id
-            AttributeType: S
-        KeySchema:
-          - AttributeName: person_smt_record_id
-            KeyType: HASH
+    # LabbyMemory:
+    #   Type: AWS::DynamoDB::Table
+    #   Properties:
+    #     TableName: LabbyPersonMemory
+    #     BillingMode: PAY_PER_REQUEST
+    #     AttributeDefinitions:
+    #       - AttributeName: person_smt_record_id
+    #         AttributeType: S
+    #     KeySchema:
+    #       - AttributeName: person_smt_record_id
+    #         KeyType: HASH

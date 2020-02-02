@@ -14,7 +14,7 @@ def __get_headers() -> dict:
         dict -- Headers for API calls
     """
     headers = {
-        "Authorization": "Token token={}".format(os.environ['CODE_CLIMATE_API_KEY'])
+        "Authorization": "Token token={}".format(os.environ['CODE_CLIMATE_ACCESS_TOKEN'])
     }
 
     return headers

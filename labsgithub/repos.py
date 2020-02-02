@@ -25,11 +25,14 @@ class RepositoryPurpose(Enum):
 def provision_product_repos():
     """Ensures all product repos are provisioned or adopted.
     """
+    print("Connecting to GitHub API")
     github_api = github_dao.get_api()
-
+    
     # The Github org to work with
     # TODO: Labby should be able to work with many orgs
     github_org_name = os.environ["GITHUB_ORG"]
+    
+    print("Connecting to org: {}".format(github_org_name)
     github_organization = github_api.get_organization(github_org_name)
 
     product_github_repos = repos.get_all_active()

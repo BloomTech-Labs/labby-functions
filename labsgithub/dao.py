@@ -5,6 +5,8 @@ import requests
 from enum import Enum
 
 # Third party imports
+# Note: https://pygithub.readthedocs.io/en/latest/index.html
+#       https://github.com/PyGithub/PyGithub
 from github import Github
 from github import GithubIntegration
 from github import UnknownObjectException
@@ -31,17 +33,19 @@ def get_api():
         [type] -- [description]
     """
     # This authenticates Labby as a Github App: https://developer.github.com/apps/about-apps/#about-github-apps
-    github_app_id = os.environ["GITHUB_API_APP_ID"]
-    github_api_key = os.environ["GITHUB_API_KEY"]
+    github_app_integration_id = os.environ["GITHUB_APP_INTEGRATION_ID"]
+    github_app_private_key = os.environ["GITHUB_APP_PRIVATE_KEY"]
+    
+    print("Authenticating using integration ID {}".format(github_app_integration_id))
+    # print("Private Key {}".format(github_app_private_key))
+    github_integration = GithubIntegration(integration_id=github_app_integration_id, private_key=github_app_private_key)
 
-    github_integration = GithubIntegration(
-        integration_id=github_app_id, private_key=github_api_key)
-
-    # Grab an access token for the one any only installation
+    # Grab an access token for the Lambda-School-Labs installation
     # TODO: This should handle multiple installations
-    github_installation_id = os.environ["GITHUB_INSTALLATION_ID"]
-    access_token = github_integration.get_access_token(
-        installation_id=github_installation_id)
+    github_app_org_installation_id = os.environ["GITHUB_APP_ORG_INSTALLATION_ID"]
+    
+    print("Retrieving access token for installation {} from {}".format(github_app_org_installation_id, github_integration.base_url))
+    access_token = github_integration.get_access_token(installation_id=github_app_org_installation_id)
 
     # Use the access token to authenticate for the specific installation
     github_api = Github(login_or_token=access_token.token)
