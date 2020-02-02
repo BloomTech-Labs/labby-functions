@@ -69,38 +69,32 @@ def get_all_product_github_repo_records():
     return airtable.get_all()
 
 
-def update_repository_grade(repository_id: str, grade: str):
+def upsert_repository_record(repository_id: str, grade: str, badge_token: str, test_reporter_id: str):
     """
     Updates the grade record for a repository
     """
     airtable = Airtable(LABS_BASE_ID, LABS_CODE_CLIMATE_METRICS_TABLE)
 
+    # Formulate the record to be upserted
+    record = {
+        "Repository ID": repository_id,
+        "Grade": grade,
+        "Badge Token": badge_token,
+        "Test Reporter ID": test_reporter_id,
+    }
+
+    # Search for the record
     formula = "{{Repository ID}} = '{}'".format(repository_id)
     records = airtable.get_all(formula=formula)
 
     if len(records) == 0:
-        insert_repository_grade(repository_id, grade)
+        # No record, insert a new one
+        airtable.insert(record)
         return
-    elif len(records) > 1:
-        raise Exception(
-            "Multiple records found for repository ID: {}".format(repository_id))
+    elif len(records) == 1:
+        # Record exists, update it
+        airtable.update(records[0]['id'], record)
+        return
 
-    fields = {
-        "Grade": grade
-    }
-
-    airtable.update(records[0]['id'], fields)
-
-
-def insert_repository_grade(repository_id: str, grade: str):
-    """
-    Inserts a new grade record for repository
-    """
-    airtable = Airtable(LABS_BASE_ID, LABS_CODE_CLIMATE_METRICS_TABLE)
-
-    record = {
-        "Repository ID": repository_id,
-        "Grade": grade
-    }
-
-    airtable.insert(record)
+    # Multiple records found, panic!
+    raise Exception("Multiple records found for repository ID: {}".format(repository_id))

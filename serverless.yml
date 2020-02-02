@@ -34,7 +34,11 @@ provider:
   memorySize: 128
   logRetentionInDays: 14
   versionFunctions: false
-  reservedConcurrency: 5
+  reservedConcurrency: 50
+  timeout: 30
+  tracing:
+    apiGateway: false
+    lambda: true
   iamManagedPolicies:
     - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   iamRoleStatements:
@@ -77,7 +81,7 @@ provider:
     # GITHUB_PERSONAL_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-github-personal-access-token~true}
 
     # API key for Airtable
-    # AIRTABLE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-airtable-api-key~true}
+    AIRTABLE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-airtable-api-key~true}
 
     CODE_CLIMATE_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-code-climate-access-token~true}
 
@@ -93,21 +97,13 @@ functions:
     events:
       - schedule: rate(60 minutes)
 
-  codeclimate_add_repositories:
-    handler: labscodeclimate/handler.add_repositories
-    description: Processes messages containing Github repository names, ensures each has been added to Code Climate
+  codeclimate_process_repository_batch:
+    handler: labscodeclimate/handler.process_repository_batch
+    description: Processes a batch of repository records from GitHub
     events:
       - sqs:
           arn: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
           batchSize: 10
-
-  # codeclimate_gather_code_climate_metrics:
-  #   handler: codeclimate/handler.gather_code_climate_metrics
-  #   description: Processes a batch of messages containing Github repository IDs, gathering Code Climate metrics for each repository.
-  #   events:
-  #     - sqs:
-  #         arn: !GetAtt CodeClimateRepoWorkerQueue.Arn
-  #         batchSize: 10
 
   # slack_drop_quotes:
   #   handler: slack/quotes.drop_quotes
@@ -151,7 +147,6 @@ resources:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "CodeClimateRepoWorkerQueue"
-        DelaySeconds: 60
 
     SecretLabbyGithubAppIntegrationID:
       Type: AWS::SecretsManager::Secret
@@ -180,6 +175,13 @@ resources:
         Name: labby-code-climate-access-token
         Description: Access token for Code Climate
         SecretString: ${file(.env.yml):CODE_CLIMATE_ACCESS_TOKEN}
+    
+    SecretLabbyAirtableApiKey:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: labby-airtable-api-key
+        Description: API key for Airtable
+        SecretString: ${file(.env.yml):AIRTABLE_API_KEY}
 
     # A bucket for storing public-facing assets
     PublicAssetBucket:

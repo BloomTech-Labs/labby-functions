@@ -1,7 +1,6 @@
 # Standard library imports
 import os
 import json
-from enum import Enum
 
 # Third party imports
 import requests
@@ -20,66 +19,20 @@ def __get_headers() -> dict:
     return headers
 
 
-def get_most_recent_gpa(github_slug: str) -> str:
-    """Returns the most recent GPA (letter grade) for a Github repository.
-
-       Side effect: If the repository is not already integrated with Code Climate, it will be integrated and None will be returned.
-
-    Arguments:
-        github_slug {str} -- The Github slug (<owner>/<repository>)
-
-    Returns:
-        str -- A letter grade or None if the grade isn't available
-    """
-    url = "https://api.codeclimate.com/v1/repos?github_slug={}".format(
-        github_slug)
-    print("Sending GET requestion to: {}".format(url))
+def get_repo(github_slug: str) -> dict:
+    url = "https://api.codeclimate.com/v1/repos?github_slug={}".format(github_slug)
+    print("Getting repo from Code Climate: {}".format(url))
 
     response = requests.get(headers=__get_headers(), url=url)
-    print("Response from GET to {}: {}-{}".format(url, response, response.text))
+    print("Response from Code Climate to {}: {}-{}".format(url, response, response.text))
 
-    response_json = response.json()
-    if len(response_json['data']) == 0 or 'relationships' not in response_json['data'][0]:
+    response_json: dict = response.json()
+    if len(response_json['data']) == 0:
+        print("Repo {} not found, adding to Code Climate".format(github_slug))
         add_repo_to_code_climate(github_slug)
         return None
 
-    relationships = response_json['data'][0]['relationships']
-
-    print("{}".format(relationships))
-    print("{}".format(relationships['latest_default_branch_snapshot']))
-    print("{}".format(relationships['latest_default_branch_snapshot']['data']))
-
-    if ('latest_default_branch_snapshot' not in relationships
-            or 'data' not in relationships['latest_default_branch_snapshot']
-            or not relationships['latest_default_branch_snapshot']['data']
-            or 'id' not in relationships['latest_default_branch_snapshot']['data']
-        ):
-        return None
-
-    repo_id = response_json['data'][0]['id']
-    latest_snapshot_id = relationships['latest_default_branch_snapshot']['data']['id']
-
-    snapshot_json = get_snapshot(repo_id, latest_snapshot_id)
-
-    print("Latest snapshot for repo {}: {}".format(
-        github_slug, snapshot_json))
-
-    if ('data' not in snapshot_json
-            or 'attributes' not in snapshot_json['data']
-            or 'ratings' not in snapshot_json['data']['attributes']
-        ):
-        return None
-
-    ratings = snapshot_json['data']['attributes']['ratings']
-
-    print("Ratings for repo {}: {}".format(github_slug, ratings))
-
-    if len(ratings) == 0:
-        return None
-
-    latest_rating = ratings[0]
-
-    return latest_rating['letter']
+    return response_json['data'][0]
 
 
 def get_snapshot(repository_id: str, snapshot_id: str) -> dict:
@@ -119,10 +72,14 @@ def add_repo_to_code_climate(github_slug) -> bool:
     response = requests.post(headers=__get_headers(), url=url, json=body)
 
     print("Response from post to URL {}: {} - {}".format(url,
-                                                         response.status_code, response.text))
+                                                         response.status_code,
+                                                         response.text))
 
     if response.status_code == 201 or response.status_code == 202:
         print("Added {} to Code Climate".format(github_slug))
+        return True
+    elif response.status_code == 409:
+        print("Repo {} was already added to Code Climate".format(github_slug))
         return True
 
     print("Error adding {} to Code Climate: {}".format(github_slug, response))
