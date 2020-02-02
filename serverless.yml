@@ -31,7 +31,10 @@ custom:
 provider:
   name: aws
   runtime: python3.7
-  timeout: 30
+  memorySize: 128
+  logRetentionInDays: 14
+  versionFunctions: false
+  reservedConcurrency: 5
   iamManagedPolicies:
     - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   iamRoleStatements:
@@ -50,6 +53,9 @@ provider:
         - "s3:GetObject"
         - "s3:DeleteObject"
       Resource: "arn:aws:s3:::${self:custom.public-asset-bucket}/*"
+
+  tags:
+    poweredby: labby
 
   environment:
     # Labby's Github App ID and Private Key for authenticating as an app
@@ -85,7 +91,7 @@ functions:
     environment:
       CODECLIMATE_REPO_WORKER_SQS_URL: !Ref QueueCodeClimateRepoWorkerQueue
     events:
-      - schedule: rate(1 hours)
+      - schedule: rate(60 minutes)
 
   codeclimate_add_repositories:
     handler: labscodeclimate/handler.add_repositories
