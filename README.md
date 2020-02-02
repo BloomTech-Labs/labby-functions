@@ -63,3 +63,7 @@ Labby interacts with Airtable using an [API key](https://airtable.com/api):
 ## Labby Assets
 
 The `assets` folder contains various static assets for use by the functions. Be aware that during deployment the `serverless-s3-deploy` plugin will automatically ship _everything in the assets folder_ to a _public, readable by the whole wide world web_ S3 bucket.
+
+## Running Local
+
+`sls invoke cloudside -f codeclimate_enqueue_all_product_repos`
