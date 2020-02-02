@@ -6,6 +6,9 @@ verify_ssl = true
 [dev-packages]
 pytest = "*"
 autopep8 = "*"
+pylint = "*"
+bandit = "*"
+flake8 = "*"
 
 [packages]
 requests = "*"
@@ -13,6 +16,7 @@ boto3 = "*"
 jwt = "*"
 pygithub = "*"
 slackclient = "*"
+airtable-python-wrapper = "*"
 
 [requires]
 python_version = "3.7"
