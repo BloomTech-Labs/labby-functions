@@ -1,5 +1,7 @@
 # Labby
 
+[![Maintainability](https://api.codeclimate.com/v1/badges/f9310d8480b61b88f0d4/maintainability)](https://codeclimate.com/github/Lambda-School-Labs/labby-functions/maintainability)
+
 ## Overview
 
 Labby is a growing collection of automation functions that support Lambda Labs operations.
