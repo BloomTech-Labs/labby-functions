@@ -32,8 +32,6 @@ provider:
   name: aws
   runtime: python3.7
   timeout: 30
-  tracing:
-    lambda: true
   iamManagedPolicies:
     - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   iamRoleStatements:
