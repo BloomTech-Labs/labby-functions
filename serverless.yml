@@ -83,8 +83,6 @@ provider:
     # API key for Airtable
     AIRTABLE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-airtable-api-key~true}
 
-    CODE_CLIMATE_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-code-climate-access-token~true}
-
     # API key for Slack
     # SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-api-token~true}
 
@@ -94,16 +92,27 @@ functions:
     description: Gets a list of all current product repositories and queues them up in SQS for processing.
     environment:
       CODECLIMATE_REPO_WORKER_SQS_URL: !Ref QueueCodeClimateRepoWorkerQueue
+      GITHUB_REPO_CONFIG_WORKER_SQS_URL: !Ref QueueGithubRepoConfigurationWorker
     events:
       - schedule: rate(60 minutes)
 
   codeclimate_process_repository_batch:
     handler: labscodeclimate/handler.process_repository_batch
     description: Processes a batch of repository records from GitHub
+    environment:
+      CODE_CLIMATE_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-code-climate-access-token~true}
     events:
       - sqs:
           arn: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
-          batchSize: 10
+          batchSize: 5
+
+  github_configuration_worker:
+    handler: labsgithub/handler.repo_configuration_worker
+    description: Processes a batch of GitHub repository records
+    events:
+      - sqs:
+          arn: !GetAtt QueueGithubRepoConfigurationWorker.Arn
+          batchSize: 5
 
   # slack_drop_quotes:
   #   handler: slack/quotes.drop_quotes
@@ -148,6 +157,12 @@ resources:
       Properties:
         QueueName: "CodeClimateRepoWorkerQueue"
 
+    # For queueing up jobs to monitor repo configuration
+    QueueGithubRepoConfigurationWorker:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "GithubRepoConfigurationWorker"
+
     SecretLabbyGithubAppIntegrationID:
       Type: AWS::SecretsManager::Secret
       Properties:
@@ -161,7 +176,7 @@ resources:
         Name: labby-github-app-private-key
         Description: A private key that can be used to authenticate a Labby installation
         SecretString: ${file(.env.yml):GITHUB_APP_PRIVATE_KEY}
-    
+
     SecretLabbyGithubAppOrgInstallationID:
       Type: AWS::SecretsManager::Secret
       Properties:
@@ -175,7 +190,7 @@ resources:
         Name: labby-code-climate-access-token
         Description: Access token for Code Climate
         SecretString: ${file(.env.yml):CODE_CLIMATE_ACCESS_TOKEN}
-    
+
     SecretLabbyAirtableApiKey:
       Type: AWS::SecretsManager::Secret
       Properties:

@@ -40,18 +40,36 @@ def enqueue_all_product_repos(event, context):
     org = github_api.get_organization(org_name)
 
     org_repos = org.get_repos()
-    print("Sending {} repositories to the processing queue".format(org_repos.totalCount))
+    print("Sending {} repositories to the processing queue"
+          .format(org_repos.totalCount))
 
-    # Send messages to the worker queue
-    worker_sqs_queue = os.environ["CODECLIMATE_REPO_WORKER_SQS_URL"]
+    # Send messages to the worker queues
+    code_climate_worker_sqs_queue = os.environ["CODECLIMATE_REPO_WORKER_SQS_URL"]
+    github_repo_config_worker_sqs_queue = os.environ["GITHUB_REPO_CONFIG_WORKER_SQS_URL"]
 
+    # TODO: Should be pushing to an SNS topic that is subscribed to by multiple queues
+    # TODO: Should json.dumps() to create the message in valid JSON
     for repo in org_repos:
-        print("Queueing up repository {} into worker queue: {}".format(repo.full_name, str(worker_sqs_queue)))
+        print("Queueing up repository {} into worker queue: {}"
+              .format(repo.full_name, str(code_climate_worker_sqs_queue)))
+
         response = sqs.send_message(
-            QueueUrl=worker_sqs_queue,
+            QueueUrl=code_climate_worker_sqs_queue,
             # Add some random delay to the messages to throttle the API calls a bit
-            DelaySeconds=random.randint(5, 60),
+            DelaySeconds=random.randint(5, 600),
             MessageBody=str(repo.full_name)
+        )
+
+        print("Response from SQS: {}".format(response))
+
+        print("Queueing up repository {} into worker queue: {}"
+              .format(repo.full_name, str(github_repo_config_worker_sqs_queue)))
+
+        response = sqs.send_message(
+            QueueUrl=github_repo_config_worker_sqs_queue,
+            # Add some random delay to the messages to throttle the API calls a bit
+            DelaySeconds=random.randint(5, 600),
+            MessageBody=str(repo.raw_data)
         )
 
         print("Response from SQS: {}".format(response))
@@ -79,11 +97,13 @@ def __process_repository(record):
     print("Processing event record: {}".format(record))
     repository_id: str = record['body']
 
-    print("Ensuring repo {} in connected to Code Climate".format(repository_id))
+    print("Ensuring repo {} in connected to Code Climate"
+          .format(repository_id))
     codeclimate_repo = codeclimate_dao.get_repo(repository_id)
 
     if codeclimate_repo is None:
-        print("Unable to get repo {} from Code Climate, will try later".format(repository_id))
+        print("Unable to get repo {} from Code Climate, will try later"
+              .format(repository_id))
         return None
 
     print("Getting most recent GPA for repo {}".format(codeclimate_repo))
@@ -95,7 +115,10 @@ def __process_repository(record):
     print("Getting reporter_id for repo {}".format(repository_id))
     test_reporter_id = __get_test_reporter_id(codeclimate_repo)
 
-    labs_dao.upsert_repository_record(repository_id=repository_id, grade=gpa, badge_token=badge_token, test_reporter_id=test_reporter_id)
+    labs_dao.upsert_repository_record(repository_id=repository_id,
+                                      grade=gpa,
+                                      badge_token=badge_token,
+                                      test_reporter_id=test_reporter_id)
 
     print("Processed event record: {}".format(record))
 
