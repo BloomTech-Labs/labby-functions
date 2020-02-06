@@ -9,6 +9,7 @@ autopep8 = "*"
 pylint = "*"
 bandit = "*"
 flake8 = "*"
+mypy = "*"
 
 [packages]
 requests = "*"

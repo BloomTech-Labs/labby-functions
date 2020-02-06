@@ -28,6 +28,7 @@ var/
 *.egg
 __pycache__/
 .pytest_cache/
+.mypy_cache/
 
 # Serverless directories
 .serverless
