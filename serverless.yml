@@ -45,7 +45,9 @@ provider:
     - Effect: "Allow"
       Action:
         - "sqs:SendMessage"
-      Resource: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
+      Resource:
+        - !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
+        - !GetAtt QueueGithubRepoConfigurationWorker.Arn
     - Effect: "Allow"
       Action:
         - "s3:ListBucket"
