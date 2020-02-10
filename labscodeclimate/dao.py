@@ -4,6 +4,7 @@ import json
 
 # Third party imports
 import requests
+from typing import Optional
 
 
 def __get_headers() -> dict:
@@ -19,7 +20,7 @@ def __get_headers() -> dict:
     return headers
 
 
-def get_repo(github_slug: str) -> dict:
+def get_repo(github_slug: str) -> Optional[dict]:
     url = "https://api.codeclimate.com/v1/repos?github_slug={}".format(github_slug)
     print("Getting repo from Code Climate: {}".format(url))
 
