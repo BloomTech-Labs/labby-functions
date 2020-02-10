@@ -35,7 +35,7 @@ def get_api():
     # This authenticates Labby as a Github App: https://developer.github.com/apps/about-apps/#about-github-apps
     github_app_integration_id = os.environ["GITHUB_APP_INTEGRATION_ID"]
     github_app_private_key = os.environ["GITHUB_APP_PRIVATE_KEY"]
-    
+
     print("Authenticating using integration ID {}".format(github_app_integration_id))
     # print("Private Key {}".format(github_app_private_key))
     github_integration = GithubIntegration(integration_id=github_app_integration_id, private_key=github_app_private_key)
@@ -43,7 +43,7 @@ def get_api():
     # Grab an access token for the Lambda-School-Labs installation
     # TODO: This should handle multiple installations
     github_app_org_installation_id = os.environ["GITHUB_APP_ORG_INSTALLATION_ID"]
-    
+
     print("Retrieving access token for installation {} from {}".format(github_app_org_installation_id, github_integration.base_url))
     access_token = github_integration.get_access_token(installation_id=github_app_org_installation_id)
 
