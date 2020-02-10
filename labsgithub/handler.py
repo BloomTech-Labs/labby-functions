@@ -9,7 +9,6 @@ import ast
 # Third party library imports
 from typing import List
 from github import Github, GithubException, PaginatedList
-from github.Organization import Organization
 from github.Membership import Membership
 from github.Team import Team
 from github.NamedUser import NamedUser
@@ -49,7 +48,7 @@ def __process_repository(event_record):
     if __is_labs_repo(repo):
         print("Found Labs repo {}".format(repo.full_name))
 
-        __confirm_student_teams(repo)
+        __confirm_student_team(repo)
 
         __confirm_collaborators(repo)
 
@@ -70,13 +69,13 @@ def __is_labs_repo(repo: Repository):
     return False
 
 
-def __confirm_student_teams(repo: Repository):
+def __confirm_student_team(repo: Repository):
     teams: PaginatedList = repo.get_teams()
 
     team: Team
     for team in teams:
         team_name: str = team.name
-        if "Labs 20".upper() in team_name.upper():
+        if "admins".upper() not in team_name.upper():
             team.set_repo_permission(repo, "push")
 
 
