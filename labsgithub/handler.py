@@ -57,6 +57,13 @@ def __process_repository(event_record):
 
     return None
 
+def __is_current_team_name(team_name: str) -> bool:
+    valid_team_names: List[str] = ['Labs 20', 'Labs PT7']
+    up_team_name:str = team_name.upper()
+    result = any(up_team_name.find(name.upper()) > -1 for name in valid_team_names)
+    if result:
+        return True
+    return False
 
 def __is_labs_repo(repo: Repository):
     teams: PaginatedList = repo.get_teams()
@@ -64,7 +71,7 @@ def __is_labs_repo(repo: Repository):
     team: Team
     for team in teams:
         team_name: str = team.name
-        if "Labs 20".upper() in team_name.upper():
+        if __is_current_team_name(team_name):
             return True
 
     return False
@@ -72,11 +79,11 @@ def __is_labs_repo(repo: Repository):
 
 def __confirm_student_teams(repo: Repository):
     teams: PaginatedList = repo.get_teams()
-
+    # update current teams only, considering buildons
     team: Team
     for team in teams:
         team_name: str = team.name
-        if "Labs 20".upper() in team_name.upper():
+        if __is_current_team_name(team_name):
             team.set_repo_permission(repo, "push")
 
 
