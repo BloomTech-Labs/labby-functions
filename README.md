@@ -1,7 +1,6 @@
 # Labby
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/f9310d8480b61b88f0d4/maintainability)](https://codeclimate.com/github/Lambda-School-Labs/labby-functions/maintainability)
-
 [![Test Coverage](https://api.codeclimate.com/v1/badges/f9310d8480b61b88f0d4/test_coverage)](https://codeclimate.com/github/Lambda-School-Labs/labby-functions/test_coverage)
 
 ## Overview

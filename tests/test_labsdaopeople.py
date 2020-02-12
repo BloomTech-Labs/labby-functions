@@ -1,9 +1,6 @@
 import unittest
 import unittest.mock as mock
 
-import airtable
-import slack
-
 import labsdao.people
 
 
@@ -22,7 +19,7 @@ class TestGetSMTRecord(unittest.TestCase):
 
         mock_airtable_get.assert_called_once()
 
-        self.assertEquals(smt_record, None)
+        self.assertEqual(smt_record, None)
 
     def test_happy(self, mock_airtable_get):
 
@@ -34,7 +31,7 @@ class TestGetSMTRecord(unittest.TestCase):
 
         mock_airtable_get.assert_called_once()
 
-        self.assertEquals(record_in, record_out)
+        self.assertEqual(record_in, record_out)
 
 
 @mock.patch('airtable.Airtable.__init__', mock.Mock(return_value=None))
@@ -50,7 +47,7 @@ class TestGetAllQuoteChannels(unittest.TestCase):
 
         mock_airtable_get_all.assert_called_once()
 
-        self.assertEquals(len(quote_channels), 0)
+        self.assertEqual(len(quote_channels), 0)
 
     def test_bad_quote(self, mock_airtable_get_all):
 
@@ -62,4 +59,4 @@ class TestGetAllQuoteChannels(unittest.TestCase):
 
         mock_airtable_get_all.assert_called_once()
 
-        self.assertEquals(quote_channels_in, quote_channels_out)
+        self.assertEqual(quote_channels_in, quote_channels_out)

@@ -1,9 +1,6 @@
 import unittest
 import unittest.mock as mock
 
-import airtable
-import slack
-
 import labsdao.quotes
 
 
@@ -20,7 +17,7 @@ class TestGetAllQuotes(unittest.TestCase):
 
         mock_airtable_get_all.assert_called_once()
 
-        self.assertEquals(len(quotes), 0)
+        self.assertEqual(len(quotes), 0)
 
     def test_bad_quote(self, mock_airtable_get_all):
 
@@ -32,7 +29,7 @@ class TestGetAllQuotes(unittest.TestCase):
 
         mock_airtable_get_all.assert_called_once()
 
-        self.assertEquals(quotes_in, quotes_out)
+        self.assertEqual(quotes_in, quotes_out)
 
 
 @mock.patch('airtable.Airtable.__init__', mock.Mock(return_value=None))
@@ -48,7 +45,7 @@ class TestGetAllQuoteChannels(unittest.TestCase):
 
         mock_airtable_get_all.assert_called_once()
 
-        self.assertEquals(len(quote_channels), 0)
+        self.assertEqual(len(quote_channels), 0)
 
     def test_bad_quote(self, mock_airtable_get_all):
 
@@ -60,4 +57,4 @@ class TestGetAllQuoteChannels(unittest.TestCase):
 
         mock_airtable_get_all.assert_called_once()
 
-        self.assertEquals(quote_channels_in, quote_channels_out)
+        self.assertEqual(quote_channels_in, quote_channels_out)
