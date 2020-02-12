@@ -18,8 +18,8 @@ jobs:
       - uses: actions/checkout@master
 
       - uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python }}
+        with:
+          python-version: ${{ matrix.python }}
 
       - uses: dschep/install-pipenv-action@v1
 
