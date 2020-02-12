@@ -1,4 +1,4 @@
-name: master-push
+name: Push to Master
 
 on:
   push:
@@ -22,6 +22,8 @@ jobs:
           python-version: ${{ matrix.python }}
 
       - uses: dschep/install-pipenv-action@v1
+
+      - run: pipenv install
 
       - uses: paambaati/codeclimate-action@v2.4.0
         env:
