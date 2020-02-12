@@ -70,4 +70,14 @@ The `assets` folder contains various static assets for use by the functions. Be 
 
 ## Running Local
 
-`sls invoke cloudside -f codeclimate_enqueue_all_product_repos`
+- install [pipenv](https://github.com/pypa/pipenv)
+- `pipenv install --dev`
+- `pipenv shell`
+- `python --version` # Python 3.7.3
+
+TODO: Setup Serverless framework for python
+
+- [Getting Started](https://serverless.com/framework/docs/getting-started/)
+- `npx install serverless`
+- [config]
+- `sls invoke cloudside -f codeclimate_enqueue_all_product_repos`
