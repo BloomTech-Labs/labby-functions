@@ -36,3 +36,5 @@ __pycache__/
 .vscode
 
 **/node_modules
+
+.coverage

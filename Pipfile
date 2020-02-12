@@ -18,6 +18,9 @@ jwt = "*"
 pygithub = "*"
 slackclient = "*"
 airtable-python-wrapper = "*"
+mock = "*"
+functools = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.7"

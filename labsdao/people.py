@@ -1,5 +1,6 @@
 # Core imports
 import datetime
+from functools import lru_cache
 
 # Third party imports
 import boto3
@@ -18,7 +19,7 @@ LABBY_PEOPLE_TABLE = 'People'
 
 DYNAMODB_PERSON_MEMORY_TABLE = 'LabbyPersonMemory'
 
-UNASSIGNED_AND_INCOMPLETE_INTERVIEWEE_FILTER = '''AND({Identified for Interview} != '', 
+UNASSIGNED_AND_INCOMPLETE_INTERVIEWEE_FILTER = '''AND({Identified for Interview} != '',
                                                       {Cohort Active?} = True(),
                                                       {Interview Scheduled} = False(),
                                                       {Mock Interview Score} = 0,
@@ -27,6 +28,7 @@ UNASSIGNED_AND_INCOMPLETE_INTERVIEWEE_FILTER = '''AND({Identified for Interview}
 GET_STUDENT_BY_GITHUB_HANDLE = '''LOWER({{Github ID}}) = LOWER("{}")'''
 
 GET_ACTIVE_STUDENT_BY_SMT_RECORD_ID = '''AND({{SMT Record ID}} = "{}", {{Cohort Active?}} = True())'''
+
 
 @lru_cache(maxsize=32)
 def get_all_unscheduled_and_incomplete_interviewees() -> list:
