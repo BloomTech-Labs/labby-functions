@@ -18,7 +18,7 @@ jobs:
 
       - uses: dschep/install-pipenv-action@v1
 
-      - run: pipenv install
+      - run: pipenv install --dev
         env:
           PIPENV_NOSPIN: 1
 
