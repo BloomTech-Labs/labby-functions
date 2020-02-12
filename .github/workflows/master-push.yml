@@ -1,0 +1,31 @@
+name: master-push
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  coverage:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python: [3.7, 3.8]
+    name: ${{ matrix.os }}/${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@master
+
+      - uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python }}
+
+      - uses: dschep/install-pipenv-action@v1
+
+      - uses: paambaati/codeclimate-action@v2.4.0
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CodeClimateReporterId }}
+        with:
+          coverageCommand: pipenv run coverage run -m unittest discover -s tests
+          debug: true
