@@ -9,7 +9,6 @@ import ast
 # Third party library imports
 from typing import List
 from github import Github, GithubException, PaginatedList
-from github.Organization import Organization
 from github.Membership import Membership
 from github.Team import Team
 from github.NamedUser import NamedUser
@@ -55,15 +54,19 @@ def __process_repository(event_record):
 
         __confirm_master_branch_protection(repo)
 
+        __confirm_repo_configuration(repo)
+
     return None
+
 
 def __is_current_team_name(team_name: str) -> bool:
     valid_team_names: List[str] = ['Labs 20', 'Labs PT7']
-    up_team_name:str = team_name.upper()
+    up_team_name: str = team_name.upper()
     result = any(up_team_name.find(name.upper()) > -1 for name in valid_team_names)
     if result:
         return True
     return False
+
 
 def __is_labs_repo(repo: Repository):
     teams: PaginatedList = repo.get_teams()
@@ -115,3 +118,8 @@ def __confirm_master_branch_protection(repo: Repository):
     print("Confirming branch protection for {} branch of repo {}".format(master_branch.name, repo.full_name))
     master_branch.edit_protection(required_approving_review_count=1, enforce_admins=False)
     print("Confirmed branch protection for {} branch of repo {}".format(master_branch.name, repo.full_name))
+
+
+def __confirm_repo_configuration(repo: Repository):
+    if repo.delete_branch_on_merge is not True:
+        repo.edit(delete_branch_on_merge=True)
