@@ -4,6 +4,7 @@ import json
 
 # Third party imports
 import requests
+from typing import Optional
 
 
 def __get_headers() -> dict:
@@ -19,7 +20,7 @@ def __get_headers() -> dict:
     return headers
 
 
-def get_repo(github_slug: str) -> dict:
+def get_repo(github_slug: str) -> Optional[dict]:
     url = "https://api.codeclimate.com/v1/repos?github_slug={}".format(github_slug)
     print("Getting repo from Code Climate: {}".format(url))
 
@@ -28,8 +29,6 @@ def get_repo(github_slug: str) -> dict:
 
     response_json: dict = response.json()
     if len(response_json['data']) == 0:
-        print("Repo {} not found, adding to Code Climate".format(github_slug))
-        add_repo_to_code_climate(github_slug)
         return None
 
     return response_json['data'][0]
