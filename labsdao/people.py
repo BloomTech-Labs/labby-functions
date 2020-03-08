@@ -1,5 +1,6 @@
 # Core imports
-import datetime
+from datetime import datetime
+from functools import lru_cache
 
 # Third party imports
 import boto3
@@ -18,7 +19,7 @@ LABBY_PEOPLE_TABLE = 'People'
 
 DYNAMODB_PERSON_MEMORY_TABLE = 'LabbyPersonMemory'
 
-UNASSIGNED_AND_INCOMPLETE_INTERVIEWEE_FILTER = '''AND({Identified for Interview} != '', 
+UNASSIGNED_AND_INCOMPLETE_INTERVIEWEE_FILTER = '''AND({Identified for Interview} != '',
                                                       {Cohort Active?} = True(),
                                                       {Interview Scheduled} = False(),
                                                       {Mock Interview Score} = 0,
@@ -27,6 +28,7 @@ UNASSIGNED_AND_INCOMPLETE_INTERVIEWEE_FILTER = '''AND({Identified for Interview}
 GET_STUDENT_BY_GITHUB_HANDLE = '''LOWER({{Github ID}}) = LOWER("{}")'''
 
 GET_ACTIVE_STUDENT_BY_SMT_RECORD_ID = '''AND({{SMT Record ID}} = "{}", {{Cohort Active?}} = True())'''
+
 
 @lru_cache(maxsize=32)
 def get_all_unscheduled_and_incomplete_interviewees() -> list:
@@ -56,8 +58,8 @@ def get_smt_record(record_id: str) -> object:
 
 @lru_cache(maxsize=32)
 def get_person_memory(person_smt_record_id: str) -> object:
-    dynamodb_api = boto3.resource('dynamodb')
-    person_memory_table = dynamodb_api.Table(DYNAMODB_PERSON_MEMORY_TABLE)
+    dynamodb_resource: ServiceResource = boto3.resource('dynamodb')
+    person_memory_table: Table = dynamodb_resource.Table(DYNAMODB_PERSON_MEMORY_TABLE)
 
     person_item = object
     try:
@@ -71,14 +73,14 @@ def get_person_memory(person_smt_record_id: str) -> object:
 
 
 def notified_of_interview(person_smt_record_id: str):
-    dynamodb_api = boto3.resource('dynamodb')
-    person_memory_table = dynamodb_api.Table(DYNAMODB_PERSON_MEMORY_TABLE)
+    dynamodb_resource: ServiceResource = boto3.resource('dynamodb')
+    person_memory_table = dynamodb_resource.Table(DYNAMODB_PERSON_MEMORY_TABLE)
 
     try:
         person_memory_table.update_item(Key={'person_smt_record_id': person_smt_record_id},
                                         UpdateExpression="SET last_interview_notification = :l",
                                         ExpressionAttributeValues={
-            ':l': datetime.datetime.utcnow().isoformat()
+            ':l': datetime.utcnow().isoformat()
         })
     except ClientError as e:
         print("Error updating person memory item: {}".format(
