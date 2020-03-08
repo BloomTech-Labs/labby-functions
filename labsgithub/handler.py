@@ -3,13 +3,14 @@
 This module contains AWS Lambda function handlers.
 """
 # Standard library imports
+import logging
 import multiprocessing
 import ast
+
 
 # Third party library imports
 from typing import List
 from github import Github, GithubException, PaginatedList
-from github.Organization import Organization
 from github.Membership import Membership
 from github.Team import Team
 from github.NamedUser import NamedUser
@@ -21,6 +22,12 @@ from labsgithub import dao as github_dao
 
 
 def repo_configuration_worker(event: dict, context: dict):
+    """The handler entry point for processing GitHub repository records.
+
+    Note: This handler uses the multiprocessing library to parallelize processing of records
+
+    event -- Contains a list of event records from the queue
+    """
     event_records: List[dict] = event['Records']
     print("Processing {} events".format(len(event_records)))
     processes = []
@@ -34,56 +41,82 @@ def repo_configuration_worker(event: dict, context: dict):
         process.join()
 
 
-def __process_repository(event_record):
+def __process_repository(event_record: dict):
+    """Processes a single GitHub repository.
+
+    event_record -- An event record from the queue
+    """
     print("Processing event record: {}".format(event_record))
+
+    # Extract the 'body' part of the record
     repo_record_string = event_record['body']
     print("repo_record_string: {}".format(repo_record_string))
 
     repo_record = ast.literal_eval(repo_record_string)
     print("repo_record: {}".format(repo_record))
 
+    # Get an instance of the GitHub API client
     github_api: Github = github_dao.get_api()
 
+    # Get the repository record from the GitHub API
     repo: Repository = github_api.get_repo(repo_record['full_name'])
 
+    # Check to see if the repo is part of a Labs product
     if __is_labs_repo(repo):
-        print("Found Labs repo {}".format(repo.full_name))
+        print("Confirming configuration for Labs repo {}".format(repo.full_name))
 
-        __confirm_student_teams(repo)
+        try:
+            __confirm_repo_configuration(repo)
+        except Exception as err:
+            logging.error("Error confirming configuration for Labs repo {}: {}".format(repo.full_name, err))
 
-        __confirm_collaborators(repo)
 
-        __confirm_master_branch_protection(repo)
+def __confirm_repo_configuration(repo: Repository):
+    # Confirm the configuration of the student teams
+    __confirm_student_teams(repo)
+
+    # Confirm the configuration of the collaborators
+    __confirm_collaborators(repo)
+
+    # Confirm branch protection on the repo
+    __confirm_master_branch_protection(repo)
 
     return None
 
-def __is_current_team_name(team_name: str) -> bool:
-    valid_team_names: List[str] = ['Labs 20', 'Labs PT7']
-    up_team_name:str = team_name.upper()
-    result = any(up_team_name.find(name.upper()) > -1 for name in valid_team_names)
-    if result:
-        return True
-    return False
 
-def __is_labs_repo(repo: Repository):
+def __is_labs_team_name(team_name: str) -> bool:
+    """Returns true if the team name starts with the string 'Labs' (case insensitive); false otherwise"""
+    return team_name.upper().startswith("LABS")
+
+
+def __is_labs_repo(repo: Repository) -> bool:
+    """Returns true if the repository is part of a Labs product; false otherwise
+
+    Currently, a repo is assumed to be part of a Labs product if it has at least one team with
+    a name starting with the string 'Labs' (case insensitive)
+    """
     teams: PaginatedList = repo.get_teams()
 
     team: Team
     for team in teams:
         team_name: str = team.name
-        if __is_current_team_name(team_name):
+        if __is_labs_team_name(team_name):
             return True
 
     return False
 
 
 def __confirm_student_teams(repo: Repository):
+    """Confirms the configuration of student teams on the repo
+
+    Ensures the team has 'push' access to the repository
+    """
     teams: PaginatedList = repo.get_teams()
     # update current teams only, considering buildons
     team: Team
     for team in teams:
         team_name: str = team.name
-        if __is_current_team_name(team_name):
+        if __is_labs_team_name(team_name) and "ADMIN" not in team_name.upper():
             team.set_repo_permission(repo, "push")
 
 
@@ -106,6 +139,10 @@ def __confirm_collaborators(repo: Repository):
 
 
 def __confirm_master_branch_protection(repo: Repository):
+    """Confirms master branch protection is configured for the repository.
+
+    The 'master' branch will require 1 approver and admins cannot force a merge.
+    """
     try:
         master_branch: Branch = repo.get_branch("master")
     except GithubException:
