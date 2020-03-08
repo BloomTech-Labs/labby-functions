@@ -77,7 +77,7 @@ def __confirm_repo_configuration(repo: Repository):
 
     # Confirm the configuration of the collaborators
     __confirm_collaborators(repo)
-
+    
     # Confirm branch protection on the repo
     __confirm_master_branch_protection(repo)
 
@@ -106,7 +106,6 @@ def __is_labs_repo(repo: Repository) -> bool:
 
     return False
 
-
 def __confirm_student_teams(repo: Repository):
     """Confirms the configuration of student teams on the repo
 
@@ -117,6 +116,7 @@ def __confirm_student_teams(repo: Repository):
     team: Team
     for team in teams:
         team_name: str = team.name
+
         if __is_labs_team_name(team_name) and "ADMIN" not in team_name.upper():
             team.set_repo_permission(repo, "push")
 

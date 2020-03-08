@@ -50,6 +50,8 @@ def enqueue_all_product_repos(event, context):
 
     # TODO: Should be pushing to an SNS topic that is subscribed to by multiple queues
     # TODO: Should json.dumps() to create the message in valid JSON
+    # TODO: Should batch up messages using send_message_batch to speed up processing
+    # TODO: Should use multiprocessing to send messages in parallel
     for repo in org_repos:
         print("Queueing up repository {} into worker queue: {}"
               .format(repo.full_name, str(code_climate_worker_sqs_queue)))
