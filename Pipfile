@@ -3,6 +3,9 @@ name = "pypi"
 url = "https://pypi.org/simple"
 verify_ssl = true
 
+[requires]
+python_version = "3"
+
 [dev-packages]
 pytest = "*"
 autopep8 = "*"
@@ -10,14 +13,15 @@ pylint = "*"
 bandit = "*"
 flake8 = "*"
 mypy = "*"
+mock = "*"
+coverage = "*"
 
 [packages]
 requests = "*"
 boto3 = "*"
+boto3-stubs = {extras = ["dynamodb"],version = "*"}
+boto3_type_annotations_with_docs = "*"
 jwt = "*"
 pygithub = "*"
 slackclient = "*"
 airtable-python-wrapper = "*"
-
-[requires]
-python_version = "3.7"

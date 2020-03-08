@@ -1,7 +1,6 @@
 # Labby
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/f9310d8480b61b88f0d4/maintainability)](https://codeclimate.com/github/Lambda-School-Labs/labby-functions/maintainability)
-
 [![Test Coverage](https://api.codeclimate.com/v1/badges/f9310d8480b61b88f0d4/test_coverage)](https://codeclimate.com/github/Lambda-School-Labs/labby-functions/test_coverage)
 
 ## Overview
@@ -70,4 +69,14 @@ The `assets` folder contains various static assets for use by the functions. Be 
 
 ## Running Local
 
-`sls invoke cloudside -f codeclimate_enqueue_all_product_repos`
+- install [pipenv](https://github.com/pypa/pipenv)
+- `pipenv install --dev`
+- `pipenv shell`
+- `python --version` # Python 3.7.3
+
+TODO: Setup Serverless framework for python
+
+- [Getting Started](https://serverless.com/framework/docs/getting-started/)
+- `npx install serverless`
+- [config]
+- `sls invoke cloudside -f codeclimate_enqueue_all_product_repos`

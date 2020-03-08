@@ -6,9 +6,11 @@ This module contains AWS Lambda function handlers.
 import random
 import os
 import multiprocessing
+import logging
 
 # Third party imports
 import boto3
+from boto3_type_annotations.sqs import Client
 
 # Local imports
 from labscodeclimate import dao as codeclimate_dao
@@ -30,7 +32,7 @@ def enqueue_all_product_repos(event, context):
         Nothing
     """
     # Get the queue ready
-    sqs = boto3.client('sqs')
+    sqs: Client = boto3.client('sqs')
 
     print("Connecting to GitHub API")
     github_api = github_dao.get_api()
@@ -40,8 +42,7 @@ def enqueue_all_product_repos(event, context):
     org = github_api.get_organization(org_name)
 
     org_repos = org.get_repos()
-    print("Sending {} repositories to the processing queue"
-          .format(org_repos.totalCount))
+    print("Sending {} repositories to the processing queue".format(org_repos.totalCount))
 
     # Send messages to the worker queues
     code_climate_worker_sqs_queue = os.environ["CODECLIMATE_REPO_WORKER_SQS_URL"]
@@ -58,11 +59,11 @@ def enqueue_all_product_repos(event, context):
         response = sqs.send_message(
             QueueUrl=code_climate_worker_sqs_queue,
             # Add some random delay to the messages to throttle the API calls a bit
-            DelaySeconds=random.randint(5, 600),
+            DelaySeconds=random.randint(5, 900),
             MessageBody=str(repo.full_name)
         )
 
-        print("Response from SQS: {}".format(response))
+        logging.info("Response from SQS: {}".format(response))
 
         print("Queueing up repository {} into worker queue: {}"
               .format(repo.full_name, str(github_repo_config_worker_sqs_queue)))
@@ -70,7 +71,7 @@ def enqueue_all_product_repos(event, context):
         response = sqs.send_message(
             QueueUrl=github_repo_config_worker_sqs_queue,
             # Add some random delay to the messages to throttle the API calls a bit
-            DelaySeconds=random.randint(5, 600),
+            DelaySeconds=random.randint(5, 900),
             MessageBody=str(repo.raw_data)
         )
 
@@ -83,15 +84,17 @@ def enqueue_all_product_repos(event, context):
 
 def process_repository_batch(event, context):
     event_records = event['Records']
-    print("Processing {} events".format(len(event_records)))
     processes = []
 
+    print("Starting {} processes".format(len(event_records)))
     for record in event_records:
-        p = multiprocessing.Process(target=__process_repository, args=(record,))
-        processes.append(p)
-        p.start()
+        process = multiprocessing.Process(target=__process_repository, args=(record,))
+        processes.append(process)
+        process.start()
 
-    for process in processes:
+    # Now that all the processes are running, wait for them to finish before exiting the handler
+    logging.info("Waiting for processes to finish")
+    for processes in processes:
         process.join()
 
 
@@ -99,13 +102,12 @@ def __process_repository(record):
     print("Processing event record: {}".format(record))
     repository_id: str = record['body']
 
-    print("Ensuring repo {} in connected to Code Climate"
-          .format(repository_id))
+    print("Ensuring repo {} in connected to Code Climate".format(repository_id))
     codeclimate_repo = codeclimate_dao.get_repo(repository_id)
 
     if codeclimate_repo is None:
-        print("Unable to get repo {} from Code Climate, will try later"
-              .format(repository_id))
+        print("Repo {} not found, adding to Code Climate".format(repository_id))
+        codeclimate_dao.add_repo_to_code_climate(repository_id)
         return None
 
     print("Getting most recent GPA for repo {}".format(codeclimate_repo))

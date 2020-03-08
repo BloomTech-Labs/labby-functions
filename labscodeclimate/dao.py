@@ -29,8 +29,6 @@ def get_repo(github_slug: str) -> Optional[dict]:
 
     response_json: dict = response.json()
     if len(response_json['data']) == 0:
-        print("Repo {} not found, adding to Code Climate".format(github_slug))
-        add_repo_to_code_climate(github_slug)
         return None
 
     return response_json['data'][0]

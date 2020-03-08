@@ -1,0 +1,30 @@
+name: Pull Request to Master
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@master
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+
+      - uses: dschep/install-pipenv-action@v1
+
+      - run: make install-dev
+        env:
+          PIPENV_NOSPIN: 1
+
+      - uses: paambaati/codeclimate-action@v2.4.0
+        env:
+          CC_TEST_REPORTER_ID: ${{ secrets.CodeClimateReporterId }}
+        with:
+          coverageCommand: make coverage-xml
+          debug: true
