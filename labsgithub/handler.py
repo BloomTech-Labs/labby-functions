@@ -72,18 +72,16 @@ def __process_repository(event_record: dict):
 
 
 def __confirm_repo_configuration(repo: Repository):
-    # Confirm the configuration of the student teams
     __confirm_student_teams(repo)
 
-    # Confirm the configuration of the collaborators
     __confirm_collaborators(repo)
-    
-    # Confirm branch protection on the repo
+
     __confirm_master_branch_protection(repo)
 
-        __confirm_repo_configuration(repo)
+    __confirm_delete_branch_on_merge(repo)
 
     return None
+
 
 def __is_labs_team_name(team_name: str) -> bool:
     """Returns true if the team name starts with the string 'Labs' (case insensitive); false otherwise"""
@@ -105,6 +103,7 @@ def __is_labs_repo(repo: Repository) -> bool:
             return True
 
     return False
+
 
 def __confirm_student_teams(repo: Repository):
     """Confirms the configuration of student teams on the repo
@@ -155,6 +154,6 @@ def __confirm_master_branch_protection(repo: Repository):
     print("Confirmed branch protection for {} branch of repo {}".format(master_branch.name, repo.full_name))
 
 
-def __confirm_repo_configuration(repo: Repository):
+def __confirm_delete_branch_on_merge(repo: Repository):
     if repo.delete_branch_on_merge is not True:
         repo.edit(delete_branch_on_merge=True)
