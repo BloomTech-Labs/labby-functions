@@ -19,6 +19,8 @@ coverage = "*"
 [packages]
 requests = "*"
 boto3 = "*"
+boto3-stubs = {extras = ["dynamodb"],version = "*"}
+boto3_type_annotations_with_docs = "*"
 jwt = "*"
 pygithub = "*"
 slackclient = "*"
