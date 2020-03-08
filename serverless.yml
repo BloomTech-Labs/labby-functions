@@ -35,7 +35,7 @@ provider:
   logRetentionInDays: 14
   versionFunctions: false
   reservedConcurrency: 50
-  timeout: 30
+  timeout: 300
   tracing:
     apiGateway: false
     lambda: true
@@ -45,7 +45,9 @@ provider:
     - Effect: "Allow"
       Action:
         - "sqs:SendMessage"
-      Resource: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
+      Resource:
+        - !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
+        - !GetAtt QueueGithubRepoConfigurationWorker.Arn
     - Effect: "Allow"
       Action:
         - "s3:ListBucket"
@@ -94,7 +96,7 @@ functions:
       CODECLIMATE_REPO_WORKER_SQS_URL: !Ref QueueCodeClimateRepoWorkerQueue
       GITHUB_REPO_CONFIG_WORKER_SQS_URL: !Ref QueueGithubRepoConfigurationWorker
     events:
-      - schedule: rate(60 minutes)
+      - schedule: rate(90 minutes)
 
   codeclimate_process_repository_batch:
     handler: labscodeclimate/handler.process_repository_batch
@@ -204,6 +206,17 @@ resources:
       Properties:
         BucketName: ${self:custom.public-asset-bucket}
         AccessControl: PublicRead
+
+    403MetricFilter:
+      Type: AWS::Logs::MetricFilter
+      Properties:
+        LogGroupName: "/aws/lambda/labby-dev-codeclimate_enqueue_all_product_repos"
+        FilterPattern: "RateLimitExceededException 403"
+        MetricTransformations:
+          -
+            MetricName: "403Count"
+            MetricNamespace: "Labby/403s"
+            MetricValue: "1"
 
     # A place for Labby to remember stuff
     # This is ephemeral state information for Labby
