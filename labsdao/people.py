@@ -11,7 +11,13 @@ SMT_BASE_ID = 'appvMqcwCQosrsHhM'
 SMT_STUDENTS_TABLE = 'Students'
 
 LABS_BASE_ID = 'appThDY89pV0kOGQT'
+
 LABS_STUDENTS_TABLE = 'Students'
+
+LABS_STUDENTS_SURVEYS_TABLE = 'TBSurveys'
+# STUDENT_SURVEYS_WHERE_COHORT = '''AND(UPPER({{Cohort}}) = UPPER("{}"), UPPER({{What track are you in?}}) != "UX", UPPER({{What track are you in?}}) != "WEB")'''
+STUDENT_SURVEYS_WHERE_COHORT = '''AND(UPPER({{Cohort}}) = UPPER("{}"), UPPER({{What track are you in?}}) != "UX")'''
+
 LABS_STUDENT_GITHUB_ACTIVITY_TABLE = 'Student Github Activity'
 
 LABBY_BASE_ID = 'appJ2MpPg4tBiJhOC'
@@ -28,6 +34,18 @@ UNASSIGNED_AND_INCOMPLETE_INTERVIEWEE_FILTER = '''AND({Identified for Interview}
 GET_STUDENT_BY_GITHUB_HANDLE = '''LOWER({{Github ID}}) = LOWER("{}")'''
 
 GET_ACTIVE_STUDENT_BY_SMT_RECORD_ID = '''AND({{SMT Record ID}} = "{}", {{Cohort Active?}} = True())'''
+
+
+def get_all_student_surveys(cohort: str) -> list:
+    """
+    Retrieves records for all students onboarding surveys in a cohort
+
+    Returns:
+        records (``list``): List of people records
+    """
+    students_table = Airtable(LABS_BASE_ID, LABS_STUDENTS_SURVEYS_TABLE)
+
+    return students_table.get_all(formula=STUDENT_SURVEYS_WHERE_COHORT.format(cohort), sort=['What track are you in?', ('If you have a preference, please choose up to 3 types of product you would like to contribute to:', 'desc')])
 
 
 @lru_cache(maxsize=32)
