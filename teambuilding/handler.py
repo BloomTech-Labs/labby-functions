@@ -1,16 +1,6 @@
 # Standard library imports
 from collections import namedtuple
 import math
-# import json
-# import os
-# import random
-# import datetime
-
-# from enum import Enum
-
-# Third party imports
-# import slack
-# from slack.errors import SlackApiError
 
 # Local imports
 from labsdao import people as peopledao
@@ -22,7 +12,7 @@ ICON_URL = 'https://labby-public-assets.s3.amazonaws.com/labby-small.png'
 
 NOTIFICATION_DELAY_MINUTES = 5
 
-HARDCODED_COHORT = 'Labs 22'
+HARDCODED_COHORT = 'LabsPT10'
 
 AssignmentTuple = namedtuple('Assignment', ['project', 'student', 'score'])
 
@@ -41,9 +31,6 @@ def build_teams(event, context):
 
     projects = projectsdao.get_all_active_projects(HARDCODED_COHORT)
     print("Found {} projects".format(len(projects)))
-    # for project in projects:
-    #     print("Project: {}\n".format(project))
-    #     print("Project ID: {}\n".format(project['id']))
 
     while students:
         print("\n************************************************")
@@ -52,14 +39,17 @@ def build_teams(event, context):
 
         best_assignment = __get_best_assignment()
 
-        project_name = best_assignment.project['fields']['Name - Cohort']
-        student_name = best_assignment.student['fields']['Student Name'][0]
+        if best_assignment.project is None:
+            print("!!! Unable to match students, dropping: {}", students.pop())
+        else:
+            project_name = best_assignment.project['fields']['Name - Cohort']
+            student_name = best_assignment.student['fields']['Student Name'][0]
 
-        print("\n== Assigning {} to project {} based on score: {}".format(student_name, project_name, best_assignment.score))
+            print("\n== Assigning {} to project {} based on score: {}".format(student_name, project_name, best_assignment.score))
 
-        assignments.append(best_assignment)
+            assignments.append(best_assignment)
 
-        students.remove(best_assignment.student)
+            students.remove(best_assignment.student)
 
         print("Remaining students: {}".format(len(students)))
 
@@ -80,7 +70,7 @@ def __get_best_assignment() -> AssignmentTuple:
         for student in students:
             print("==================================================================")
 
-            project_name = project['fields']['Name - Cohort']
+            project_name = project['fields']['Name']
             student_name = student['fields']['Student Name'][0]
             print("Scoring {} - {}\n".format(project_name, student_name))
 
@@ -121,10 +111,10 @@ def __get_score(project: dict, student: dict) -> int:
     student_name = student['fields']['Student Name'][0]
     print("Scoring {} for project {}".format(student_name, project_name))
 
-    project_tracks = project['fields']['Program Names']
+    project_tracks = project['fields']['Program Names Text']
     print("Project programs: {}".format(project_tracks))
 
-    student_track = student['fields']['What track are you in?']
+    student_track = student['fields']['Student Course Text']
     print("Student Track: {}".format(student_track))
 
     if student_track not in project_tracks:
@@ -132,16 +122,16 @@ def __get_score(project: dict, student: dict) -> int:
         print("Track Score: {}".format(-10000))
         return -10000
 
-    print(" == Timezone Scoring ==")
-    tl_timezone = project['fields']['TL Timezone'][0]
-    student_timezone = student['fields']['What timezone are you in?']
+    # print(" == Timezone Scoring ==")
+    # tl_timezone = project['fields']['TL Timezone'][0]
+    # student_timezone = student['fields']['What timezone are you in?']
 
-    print("Project timezone: {}".format(tl_timezone))
-    print("Student timezone: {}".format(student_timezone))
+    # print("Project timezone: {}".format(tl_timezone))
+    # print("Student timezone: {}".format(student_timezone))
 
-    if student_timezone.upper() == tl_timezone.upper():
-        print("Timezone Score: {}".format(1))
-        score += 1
+    # if student_timezone.upper() == tl_timezone.upper():
+    #     print("Timezone Score: {}".format(1))
+    #     score += 1
 
     print("\n== Team Size Scoring ==")
     team_size_score = __calculate_team_size_score(project, student)
@@ -209,13 +199,11 @@ def __calculate_project_type_preference_score(project: dict, student: dict) -> i
 
     # Can't generate a score if project has no category
     if 'Category' not in project['fields']:
-        print("Project {} has no category, so no score".format(project_name))
-        return 0
+        raise Exception("Project {} has no category!".format(project_name))
 
     project_category = project['fields']['Category'][0]
 
     # Student has no preference
-    # print("*** CATEGORY: {}".format(student))
     if 'If you have a preference, please choose up to 3 types of product you would like to contribute to:' not in student['fields']:
         print("Student {} has no category preferences, so no score".format(student_name))
         return 0
@@ -223,16 +211,17 @@ def __calculate_project_type_preference_score(project: dict, student: dict) -> i
     student_category_preferences = student['fields']['If you have a preference, please choose up to 3 types of product you would like to contribute to:']
     print("Student {} has category preferences: {}".format(student_name, student_category_preferences))
 
-    if project_category.upper() in student_category_preferences.upper():
-        print("Category preferences are {} and project category is {} so score is 100".format(student_category_preferences, project_category))
-        return 100
+    for student_category_preference in student_category_preferences:
+        if project_category.upper() in student_category_preference.upper():
+            print("Student has matching category preference ({}) so score is 100".format(student_category_preference))
+            return 100
 
-    print("Category preferences are {} and project category is {} so score is -100".format(student_category_preferences, project_category))
+    print("No matching student category preferences ({}) for project category ({}) so score is -100".format(student_category_preferences, project_category))
     return -100
 
 
 def __calculate_team_size_score(project: dict, student: dict) -> int:
-    student_track = student['fields']['What track are you in?']
+    student_track = student['fields']['Student Course Text']
 
     average_team_size = __get_average_team_size(student_track)
     print("Current average team size: {}".format(average_team_size))
@@ -251,14 +240,14 @@ def __calculate_team_size_score(project: dict, student: dict) -> int:
 def __get_average_team_size(track: str) -> float:
     assignments_for_track = []
     for assignment in assignments:
-        if assignment.student['fields']['What track are you in?'].upper() == track.upper():
+        if assignment.student['fields']['Student Course Text'].upper() == track.upper():
             assignments_for_track.append(assignment)
 
     number_of_assignments = len(assignments_for_track)
 
     teams_requiring_track = []
     for project in projects:
-        if track.upper() in project['fields']['Program Names'].upper():
+        if track.upper() in project['fields']['Program Names Text'].upper():
             teams_requiring_track.append(project)
 
     number_of_teams = len(teams_requiring_track)
@@ -337,11 +326,11 @@ def __calculate_team_compatibility_score(project: dict, student: dict) -> int:
 
     # Check to see if the student responded to the survey, question
     # print(student['fields'])
-    if 'Incompatible Students Names' not in student['fields']:
+    if 'Incompatible Student Names' not in student['fields']:
         # If not, this has no effect on the score
         return 0
 
-    student_not_compatible_list = student['fields']['Incompatible Students Names'][0]
+    student_not_compatible_list = student['fields']['Incompatible Student Names']
     print("Checking incompatibility list for student {}: {}".format(student_name, student_not_compatible_list))
 
     # Get the list of current assignments for the project team
@@ -350,13 +339,23 @@ def __calculate_team_compatibility_score(project: dict, student: dict) -> int:
     for assignment in team_assignments:
         assigned_student_name = assignment.student['fields']['Student Name'][0]
 
-        print("Checking to see if {} is in {}".format(assigned_student_name.upper(), student_not_compatible_list.upper()))
-        if assigned_student_name.upper() in student_not_compatible_list.upper():
-            print("*** Student {} says they don't want to work with {} one of whom is assigned to project {}"
+        print("Checking to see if {} in {}".format(assigned_student_name, student_not_compatible_list))
+        if assigned_student_name in student_not_compatible_list:
+            print("*** Student {} says they don't want to work with one of ({}), who are already assigned to project {}"
                   .format(student_name, student_not_compatible_list, project_name))
 
             # Definitely not a good fit for the team
-            return -10000
+            return -100000
+
+        # print(assignment.student['fields'])
+        if 'Incompatible Students Names' in assignment.student['fields']:
+            for incompatibleStudent in assignment.student['fields']['Incompatible Student Names']:
+                if student_name.upper() == incompatibleStudent.upper():
+                    print("*** Assigned student {} says they don't want to work with {} one of whom is assigned to project {}"
+                          .format(assigned_student_name, student_name, project_name))
+
+                    # Definitely not a good fit for the team
+                    return -100000
 
     return 0
 
@@ -376,7 +375,7 @@ def __count_team_assignments(project: dict, track: str) -> float:
     number_of_assignments = 0
     for assignment in assignments:
         if assignment.project['id'] == project['id']:
-            if assignment.student['fields']['What track are you in?'].upper() == track.upper():
+            if assignment.student['fields']['Student Course Text'].upper() == track.upper():
                 number_of_assignments += 1
 
     return number_of_assignments

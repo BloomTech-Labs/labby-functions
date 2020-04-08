@@ -3,9 +3,9 @@
 # Third party imports
 from airtable import Airtable
 
-LABS_BASE_ID = 'appThDY89pV0kOGQT'
+SMT_BASE_ID = 'appvMqcwCQosrsHhM'
 
-LABS_PROJECTS_TABLE = 'TBProjects'
+PROJECTS_TABLE = 'Labs - TBProjects'
 PROJECTS_WHERE_COHORT_AND_ACTIVE = '''AND(UPPER({{Cohort}}) = UPPER("{}"), {{Active?}} = True())'''
 
 
@@ -16,7 +16,7 @@ def get_all_active_projects(cohort: str) -> list:
     Returns:
         records (``list``): List of people records
     """
-    projects_table = Airtable(LABS_BASE_ID, LABS_PROJECTS_TABLE)
+    projects_table = Airtable(SMT_BASE_ID, PROJECTS_TABLE)
 
     return projects_table.get_all(formula=PROJECTS_WHERE_COHORT_AND_ACTIVE.format(cohort))
 
@@ -25,7 +25,7 @@ def assign_student_to_project(student: dict, project: dict, score: int):
     """
     Assigns a student to a project
     """
-    projects_table = Airtable(LABS_BASE_ID, LABS_PROJECTS_TABLE)
+    projects_table = Airtable(SMT_BASE_ID, PROJECTS_TABLE)
 
     project_id = project['id']
     project_name = project['fields']['Name - Cohort']
