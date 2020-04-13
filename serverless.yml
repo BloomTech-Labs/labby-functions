@@ -87,7 +87,7 @@ provider:
     AIRTABLE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-airtable-api-key~true}
 
     # API key for Slack
-    # SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-api-token~true}
+    SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-api-token~true}
 
 functions:
   codeclimate_enqueue_all_product_repos:
@@ -124,11 +124,12 @@ functions:
           arn: !GetAtt QueueGithubRepoConfigurationWorker.Arn
           batchSize: 5
 
-  # slack_drop_quotes:
-  #   handler: slack/quotes.drop_quotes
-  #   description: Drops quotes into specified Slack channels.
-  #   events:
-  #     - schedule: cron(0 15 ? * MON-FRI *)
+  slack_drop_quotes:
+    handler: labsslack/quotes.drop_quotes
+    description: Drops quotes into specified Slack channels.
+    events:
+      # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+      - schedule: cron(0 15 ? * MON-FRI *)
 
   # Under construction
   # remind_students_about_late_peer_reviews:
