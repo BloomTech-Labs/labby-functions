@@ -72,11 +72,11 @@ def __process_repository(event_record: dict):
 
 
 def __confirm_repo_configuration(repo: Repository):
-    __confirm_student_teams(repo)
+    # __confirm_student_teams(repo)
 
-    __confirm_collaborators(repo)
+    # __confirm_collaborators(repo)
 
-    __confirm_master_branch_protection(repo)
+    # __confirm_master_branch_protection(repo)
 
     __confirm_delete_branch_on_merge(repo)
 

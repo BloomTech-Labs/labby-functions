@@ -90,6 +90,12 @@ provider:
     SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-api-token~true}
 
 functions:
+  build_teams:
+    handler: teambuilding/handler.build_teams
+    description: Builds teams automatically
+    layers:
+      - {Ref: PythonRequirementsLambdaLayer}
+
   codeclimate_enqueue_all_product_repos:
     handler: labscodeclimate/handler.enqueue_all_product_repos
     description: Gets a list of all current product repositories and queues them up in SQS for processing.

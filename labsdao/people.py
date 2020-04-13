@@ -8,10 +8,14 @@ from botocore.exceptions import ClientError
 from airtable import Airtable
 
 SMT_BASE_ID = 'appvMqcwCQosrsHhM'
-SMT_STUDENTS_TABLE = 'Students'
+# SMT_STUDENTS_TABLE = 'Students'
 
-LABS_BASE_ID = 'appThDY89pV0kOGQT'
-LABS_STUDENTS_TABLE = 'Students'
+LABS_STUDENTS_TABLE = 'Labs - Students'
+
+STUDENTS_SURVEYS_TABLE = 'Labs - TBSurveys'
+# STUDENT_SURVEYS_WHERE_COHORT = '''AND(UPPER({{Cohort}}) = UPPER("{}"), UPPER({{What track are you in?}}) != "UX", UPPER({{What track are you in?}}) != "WEB")'''
+STUDENT_SURVEYS_WHERE_COHORT = '''UPPER({{Student Course}}) != "UX"'''
+
 LABS_STUDENT_GITHUB_ACTIVITY_TABLE = 'Student Github Activity'
 
 LABBY_BASE_ID = 'appJ2MpPg4tBiJhOC'
@@ -30,30 +34,42 @@ GET_STUDENT_BY_GITHUB_HANDLE = '''LOWER({{Github ID}}) = LOWER("{}")'''
 GET_ACTIVE_STUDENT_BY_SMT_RECORD_ID = '''AND({{SMT Record ID}} = "{}", {{Cohort Active?}} = True())'''
 
 
-@lru_cache(maxsize=32)
-def get_all_unscheduled_and_incomplete_interviewees() -> list:
+def get_all_student_surveys(cohort: str) -> list:
     """
-    Retrieves records for all interviewees that need an interview, but haven't been scheduled
+    Retrieves records for all students onboarding surveys in a cohort
 
     Returns:
         records (``list``): List of people records
     """
-    students_table = Airtable(LABS_BASE_ID, LABBY_STUDENTS_TABLE)
+    students_table = Airtable(SMT_BASE_ID, STUDENTS_SURVEYS_TABLE)
 
-    return students_table.get_all(formula=UNASSIGNED_AND_INCOMPLETE_INTERVIEWEE_FILTER)
+    return students_table.get_all(view='Labs PT10', formula=STUDENT_SURVEYS_WHERE_COHORT.format(cohort), sort=['Student Course', ('If you have a preference, please choose up to 3 types of product you would like to contribute to:', 'desc')])
 
 
-@lru_cache(maxsize=32)
-def get_smt_record(record_id: str) -> object:
-    """
-    Retrieves a record from the SMT
+# @lru_cache(maxsize=32)
+# def get_all_unscheduled_and_incomplete_interviewees() -> list:
+#     """
+#     Retrieves records for all interviewees that need an interview, but haven't been scheduled
 
-    Returns:
-        record (``object``): An SMT record
-    """
-    airtable = Airtable(SMT_BASE_ID, SMT_STUDENTS_TABLE)
+#     Returns:
+#         records (``list``): List of people records
+#     """
+#     students_table = Airtable(SMT_BASE_ID, LABBY_STUDENTS_TABLE)
 
-    return airtable.get(record_id)
+#     return students_table.get_all(formula=UNASSIGNED_AND_INCOMPLETE_INTERVIEWEE_FILTER)
+
+
+# @lru_cache(maxsize=32)
+# def get_smt_record(record_id: str) -> object:
+#     """
+#     Retrieves a record from the SMT
+
+#     Returns:
+#         record (``object``): An SMT record
+#     """
+#     airtable = Airtable(SMT_BASE_ID, SMT_STUDENTS_TABLE)
+
+#     return airtable.get(record_id)
 
 
 @lru_cache(maxsize=32)
