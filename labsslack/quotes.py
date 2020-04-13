@@ -1,9 +1,6 @@
 # Standard library imports
 import os
-import json
 import random
-
-from enum import Enum
 
 # Third party imports
 import slack
@@ -16,7 +13,7 @@ USERNAME = 'Labby'
 ICON_URL = 'https://labby-public-assets.s3.amazonaws.com/labby-small.png'
 
 
-def drop_quotes():
+def drop_quotes(_event, _context):
     """Drops quotes into specified Slack channels.
     """
     print("Getting all quote channels")
@@ -27,7 +24,8 @@ def drop_quotes():
     quote_records = quotes.get_all_quotes()
     print("Got {} quotes".format(len(quote_records)))
 
-    # TODO: This is the legacy method for authenticating to the API, need to get Labby registered as an app
+    # TODO: This is the legacy method for authenticating to the API, need
+    # to get Labby registered as an app
     print("Getting slack client")
     slack_api_token = os.environ["SLACK_API_TOKEN"]
     client = slack.WebClient(token=slack_api_token)
@@ -61,9 +59,10 @@ def drop_quotes():
         except SlackApiError as error:
             print("Failed to post message: {}".format(error))
         else:
-            if(response['ok'] != True):
+            if not response['ok']:
                 print(
-                    'Slack response not ok: {}-{}'.format(response.status_code, response['error']))
+                    'Slack response not ok: {}-{}'.format(response.status_code,
+                                                          response['error']))
 
 
 def __is_channel_record_valid(record) -> bool:
