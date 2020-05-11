@@ -1,12 +1,12 @@
 {
-  "name": "codeclimate-sync",
-  "description": "",
-  "version": "0.1.0",
-  "dependencies": {
+  "name": "labby",
+  "description": "Labby automation",
+  "version": "0.5.0",
+  "devDependencies": {
     "serverless-cloudside-plugin": "^1.0.3",
-    "serverless-dotenv-plugin": "^2.1.1",
-    "serverless-offline": "^5.12.1",
-    "serverless-python-requirements": "^5.0.1",
+    "serverless-dotenv-plugin": "^2.4.2",
+    "serverless-offline": "^6.1.5",
+    "serverless-python-requirements": "^5.1.0",
     "serverless-s3-deploy": "^0.9.0"
   }
 }
