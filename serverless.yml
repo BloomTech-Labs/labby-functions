@@ -7,17 +7,19 @@ plugins:
   - serverless-offline
 
 package:
+  # See https://www.serverless.com/plugins/serverless-python-requirements/
+  individually: true
+  include:
+    - "!./**"
+    - "./src/**"
   exclude:
-    - node_modules/**
-    - assets/**
-    - tests/**
+    - "**"
 
 custom:
   # Python requirements plugin configuration
   pythonRequirements:
-    layer: true
     slim: true
-    dockerizePip: true
+    dockerizePip: non-linux
 
   # S3 deploy plugin configuration
   public-asset-bucket: labby-public-assets
@@ -31,8 +33,8 @@ custom:
 
 provider:
   name: aws
-  runtime: python3.7
-  memorySize: 128
+  runtime: python3.8
+  memorySize: 256
   logRetentionInDays: 14
   versionFunctions: false
   reservedConcurrency: 50
@@ -91,16 +93,14 @@ provider:
 
 functions:
   build_teams:
+    module: src
     handler: teambuilding/handler.build_teams
     description: Builds teams automatically
-    layers:
-      - {Ref: PythonRequirementsLambdaLayer}
 
   codeclimate_enqueue_all_product_repos:
+    module: src
     handler: labscodeclimate/handler.enqueue_all_product_repos
     description: Gets a list of all current product repositories and queues them up in SQS for processing.
-    layers:
-      - {Ref: PythonRequirementsLambdaLayer}
     timeout: 300
     environment:
       CODECLIMATE_REPO_WORKER_SQS_URL: !Ref QueueCodeClimateRepoWorkerQueue
@@ -109,10 +109,9 @@ functions:
       - schedule: rate(90 minutes)
 
   codeclimate_process_repository_batch:
+    module: src
     handler: labscodeclimate/handler.process_repository_batch
     description: Processes a batch of repository records from GitHub
-    layers:
-      - {Ref: PythonRequirementsLambdaLayer}
     environment:
       CODE_CLIMATE_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-code-climate-access-token~true}
     events:
@@ -121,20 +120,20 @@ functions:
           batchSize: 5
 
   github_configuration_worker:
+    module: src
     handler: labsgithub/handler.repo_configuration_worker
     description: Processes a batch of GitHub repository records
-    layers:
-      - {Ref: PythonRequirementsLambdaLayer}
     events:
       - sqs:
           arn: !GetAtt QueueGithubRepoConfigurationWorker.Arn
           batchSize: 5
 
   slack_drop_quotes:
+    module: src
     handler: labsslack/quotes.drop_quotes
     description: Drops quotes into specified Slack channels.
     events:
-      # https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+      # See https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
       - schedule: cron(0 15 ? * MON-FRI *)
 
   # Under construction
@@ -142,7 +141,6 @@ functions:
   #   handler: peerreviews/handler.remind_students_about_late_peer_reviews
   #   events:
   #     - schedule: cron(0 23 ? * FRI *)
-
   # github_repos_provision_product_repos:
   #   handler: github/repos.provision_product_repos
   #   description: Ensures all product repos are provisioned or adopted.
@@ -151,12 +149,10 @@ functions:
   #         name: reconcile-all-github_provision_product_repos-github-repos
   #         description: "Runs github_provision_product_repos"
   #         rate: rate(15 minutes)
-
   # github_metrics_push_hook:
   #   handler: github/metrics.push_hook
   #   events:
   #     - http: POST github_push
-
   # Under construction
   # github_reconcile_push_events:
   #   handler: github/handler.reconcile_push_events
@@ -228,11 +224,9 @@ resources:
         LogGroupName: "/aws/lambda/labby-dev-codeclimate_enqueue_all_product_repos"
         FilterPattern: "RateLimitExceededException 403"
         MetricTransformations:
-          -
-            MetricName: "403Count"
+          - MetricName: "403Count"
             MetricNamespace: "Labby/403s"
             MetricValue: "1"
-
     # A place for Labby to remember stuff
     # This is ephemeral state information for Labby
     # LabbyMemory:
