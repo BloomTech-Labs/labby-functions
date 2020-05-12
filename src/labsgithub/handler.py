@@ -28,7 +28,7 @@ def repo_configuration_worker(event: dict, context: dict):
 
     event -- Contains a list of event records from the queue
     """
-    event_records: List[dict] = event['Records']
+    event_records: List[dict] = event["Records"]
     print("Processing {} events".format(len(event_records)))
     processes = []
 
@@ -49,7 +49,7 @@ def __process_repository(event_record: dict):
     print("Processing event record: {}".format(event_record))
 
     # Extract the 'body' part of the record
-    repo_record_string = event_record['body']
+    repo_record_string = event_record["body"]
     print("repo_record_string: {}".format(repo_record_string))
 
     repo_record = ast.literal_eval(repo_record_string)
@@ -59,7 +59,7 @@ def __process_repository(event_record: dict):
     github_api: Github = github_dao.get_api()
 
     # Get the repository record from the GitHub API
-    repo: Repository = github_api.get_repo(repo_record['full_name'])
+    repo: Repository = github_api.get_repo(repo_record["full_name"])
 
     # Check to see if the repo is part of a Labs product
     if __is_labs_repo(repo):
@@ -68,7 +68,11 @@ def __process_repository(event_record: dict):
         try:
             __confirm_repo_configuration(repo)
         except Exception as err:
-            logging.error("Error confirming configuration for Labs repo {}: {}".format(repo.full_name, err))
+            logging.error(
+                "Error confirming configuration for Labs repo {}: {}".format(
+                    repo.full_name, err
+                )
+            )
 
 
 def __confirm_repo_configuration(repo: Repository):
@@ -125,15 +129,29 @@ def __confirm_collaborators(repo: Repository):
 
     collaborator: NamedUser
     for collaborator in collaborators:
-        membership: Membership = collaborator.get_organization_membership(repo.organization)
-        print("Collaborator {} on repo {} has org membership of {}".format(collaborator.login, repo.full_name, membership))
+        membership: Membership = collaborator.get_organization_membership(
+            repo.organization
+        )
+        print(
+            "Collaborator {} on repo {} has org membership of {}".format(
+                collaborator.login, repo.full_name, membership
+            )
+        )
         if membership is not None and membership.role == "admin":
-            print("Removing collaborator {} from repo {} as they are already an org admin".format(collaborator.login, repo.full_name))
+            print(
+                "Removing collaborator {} from repo {} as they are already an org admin".format(
+                    collaborator.login, repo.full_name
+                )
+            )
             repo.remove_from_collaborators(collaborator)
         else:
             current_permission = repo.get_collaborator_permission(collaborator)
             if current_permission.upper() != "push".upper():
-                print("Collaborator {} permission on repo {} being changed from {} to 'push'".format(collaborator.login, repo.full_name, current_permission))
+                print(
+                    "Collaborator {} permission on repo {} being changed from {} to 'push'".format(
+                        collaborator.login, repo.full_name, current_permission
+                    )
+                )
 
                 repo.add_to_collaborators(collaborator, "push")
 
@@ -149,9 +167,19 @@ def __confirm_master_branch_protection(repo: Repository):
         print("Master branch not found for repo {}".format(repo.full_name))
         return
 
-    print("Confirming branch protection for {} branch of repo {}".format(master_branch.name, repo.full_name))
-    master_branch.edit_protection(required_approving_review_count=1, enforce_admins=False)
-    print("Confirmed branch protection for {} branch of repo {}".format(master_branch.name, repo.full_name))
+    print(
+        "Confirming branch protection for {} branch of repo {}".format(
+            master_branch.name, repo.full_name
+        )
+    )
+    master_branch.edit_protection(
+        required_approving_review_count=1, enforce_admins=False
+    )
+    print(
+        "Confirmed branch protection for {} branch of repo {}".format(
+            master_branch.name, repo.full_name
+        )
+    )
 
 
 def __confirm_delete_branch_on_merge(repo: Repository):

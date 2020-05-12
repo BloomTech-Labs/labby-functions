@@ -4,10 +4,9 @@ import unittest.mock as mock
 import labsdao.quotes
 
 
-@mock.patch('airtable.Airtable.__init__', mock.Mock(return_value=None))
-@mock.patch('airtable.Airtable.get_all')
+@mock.patch("airtable.Airtable.__init__", mock.Mock(return_value=None))
+@mock.patch("airtable.Airtable.get_all")
 class TestGetAllQuotes(unittest.TestCase):
-
     def test_no_quotes(self, mock_airtable_get_all):
 
         # No quotes
@@ -32,10 +31,9 @@ class TestGetAllQuotes(unittest.TestCase):
         self.assertEqual(quotes_in, quotes_out)
 
 
-@mock.patch('airtable.Airtable.__init__', mock.Mock(return_value=None))
-@mock.patch('airtable.Airtable.get_all')
+@mock.patch("airtable.Airtable.__init__", mock.Mock(return_value=None))
+@mock.patch("airtable.Airtable.get_all")
 class TestGetAllQuoteChannels(unittest.TestCase):
-
     def test_no_quotes(self, mock_airtable_get_all):
 
         # No quotes

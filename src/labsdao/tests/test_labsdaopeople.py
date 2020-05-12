@@ -4,10 +4,9 @@ import unittest.mock as mock
 import labsdao.people
 
 
-@mock.patch('airtable.Airtable.__init__', mock.Mock(return_value=None))
-@mock.patch('airtable.Airtable.get')
+@mock.patch("airtable.Airtable.__init__", mock.Mock(return_value=None))
+@mock.patch("airtable.Airtable.get")
 class TestGetSMTRecord(unittest.TestCase):
-
     def test_no_record(self, mock_airtable_get):
 
         # No SMT record ID
@@ -34,10 +33,9 @@ class TestGetSMTRecord(unittest.TestCase):
         self.assertEqual(record_in, record_out)
 
 
-@mock.patch('airtable.Airtable.__init__', mock.Mock(return_value=None))
-@mock.patch('airtable.Airtable.get_all')
+@mock.patch("airtable.Airtable.__init__", mock.Mock(return_value=None))
+@mock.patch("airtable.Airtable.get_all")
 class TestGetAllQuoteChannels(unittest.TestCase):
-
     def test_no_quotes(self, mock_airtable_get_all):
 
         # No quotes

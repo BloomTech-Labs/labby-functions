@@ -1,10 +1,10 @@
 # Third party imports
 from airtable import Airtable
 
-HIPPOCAMPUS_BASE_ID = 'appThDY89pV0kOGQT'
+HIPPOCAMPUS_BASE_ID = "appThDY89pV0kOGQT"
 
-QUOTES_TABLE_NAME = 'Labby Quotes'
-QUOTE_CHANNELS_TABLE_NAME = 'Labby Quote Channels'
+QUOTES_TABLE_NAME = "Labby Quotes"
+QUOTE_CHANNELS_TABLE_NAME = "Labby Quote Channels"
 
 
 def get_all_quotes() -> list:

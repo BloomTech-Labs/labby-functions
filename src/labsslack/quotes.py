@@ -9,8 +9,8 @@ from slack.errors import SlackApiError
 # Local imports
 from labsdao import quotes
 
-USERNAME = 'Labby'
-ICON_URL = 'https://labby-public-assets.s3.amazonaws.com/labby-small.png'
+USERNAME = "Labby"
+ICON_URL = "https://labby-public-assets.s3.amazonaws.com/labby-small.png"
 
 
 def drop_quotes(_event, _context):
@@ -32,37 +32,40 @@ def drop_quotes(_event, _context):
 
     for channel_record in channel_records:
 
-        if(not __is_channel_record_valid(channel_record)):
+        if not __is_channel_record_valid(channel_record):
             print("Invalid channel record\n".format(channel_record))
             continue
 
-        channel_name = channel_record['fields']['Channel Name']
+        channel_name = channel_record["fields"]["Channel Name"]
 
         quote_record = random.choice(quote_records)
-        if(not __is_quote_record_valid(quote_record)):
+        if not __is_quote_record_valid(quote_record):
             print("Invalid quote record\n".format(quote_record))
             continue
 
-        quote = quote_record['fields']['Quote']
-        source = quote_record['fields']['Source']
+        quote = quote_record["fields"]["Quote"]
+        source = quote_record["fields"]["Source"]
 
-        formatted_quote = "\"{}\" - {}".format(quote, source)
+        formatted_quote = '"{}" - {}'.format(quote, source)
 
-        print("Posting quote to channel {}: {}".format(
-            channel_name, formatted_quote))
+        print("Posting quote to channel {}: {}".format(channel_name, formatted_quote))
         try:
-            response = client.chat_postMessage(channel=channel_name,
-                                               text=formatted_quote,
-                                               username=USERNAME,
-                                               icon_url=ICON_URL,
-                                               parse='full')
+            response = client.chat_postMessage(
+                channel=channel_name,
+                text=formatted_quote,
+                username=USERNAME,
+                icon_url=ICON_URL,
+                parse="full",
+            )
         except SlackApiError as error:
             print("Failed to post message: {}".format(error))
         else:
-            if not response['ok']:
+            if not response["ok"]:
                 print(
-                    'Slack response not ok: {}-{}'.format(response.status_code,
-                                                          response['error']))
+                    "Slack response not ok: {}-{}".format(
+                        response.status_code, response["error"]
+                    )
+                )
 
 
 def __is_channel_record_valid(record) -> bool:
@@ -74,11 +77,11 @@ def __is_channel_record_valid(record) -> bool:
     Returns:
         bool -- [description]
     """
-    if('fields' not in record):
+    if "fields" not in record:
         print("Quote record has no fields")
         return False
 
-    if('Channel Name' not in record['fields']):
+    if "Channel Name" not in record["fields"]:
         print("Quote record has no 'Channel Name' field")
         return False
 
@@ -94,15 +97,15 @@ def __is_quote_record_valid(record) -> bool:
     Returns:
         bool -- [description]
     """
-    if('fields' not in record):
+    if "fields" not in record:
         print("Quote record has no fields")
         return False
 
-    if('Quote' not in record['fields']):
+    if "Quote" not in record["fields"]:
         print("Quote record has no 'Quote' field")
         return False
 
-    if('Source' not in record['fields']):
+    if "Source" not in record["fields"]:
         print("Quote record has no 'Source' field")
         return False
 
