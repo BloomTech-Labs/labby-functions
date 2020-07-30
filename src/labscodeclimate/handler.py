@@ -54,16 +54,13 @@ def enqueue_all_product_repos(event, context):
             QueueUrl=CC_REPO_WORKER_SQS_URL,
             # Add some random delay to the messages to throttle the API calls
             DelaySeconds=random.randint(5, 900),
-            MessageBody=str(repo.full_name),
+            MessageBody={
+                "repo.full_name": str(repo.full_name),
+                "repo.default_branch": str(repo.default_branch),
+            },
         )
 
         logging.info("Response from SQS: {}".format(response))
-
-        print(
-            "Queueing up repository {} into worker queue: {}".format(
-                repo.full_name, str(GH_REPO_CONFIG_WORKER_SQS_URL)
-            )
-        )
 
         response = sqs_client.send_message(
             QueueUrl=GH_REPO_CONFIG_WORKER_SQS_URL,
@@ -91,33 +88,37 @@ def process_repository_batch(event, context):
 
     # Wait for processes to finish before exiting the handler
     logging.info("Waiting for processes to finish")
-    for processes in processes:
+    for process in processes:
         process.join()
 
 
 def __process_repository(record):
     print("Processing event record: {}".format(record))
-    repository_id: str = record["body"]
+    repo: dict = record["body"]
 
-    print("Ensuring repo {} in connected to Code Climate".format(repository_id))
-    codeclimate_repo = codeclimate_dao.get_repo(repository_id)
+    print(
+        "Ensuring branch {} of repo {} in connected to Code Climate".format(
+            repo.default_branch, repo.full_name
+        )
+    )
+    codeclimate_repo = codeclimate_dao.get_repo(repo.full_name)
 
     if codeclimate_repo is None:
-        print("Repo {} not found, adding to Code Climate".format(repository_id))
-        codeclimate_dao.add_repo_to_code_climate(repository_id)
+        print("Repo {} not found, adding to Code Climate".format(repo.full_name))
+        codeclimate_dao.add_repo_to_code_climate(repo.full_name)
         return None
 
     print("Getting most recent GPA for repo {}".format(codeclimate_repo))
     gpa = __get_most_recent_gpa(codeclimate_repo)
 
-    print("Getting badge_token for repo {}".format(repository_id))
+    print("Getting badge_token for repo {}".format(repo.full_name))
     badge_token = __get_badge_token(codeclimate_repo)
 
-    print("Getting reporter_id for repo {}".format(repository_id))
+    print("Getting reporter_id for repo {}".format(repo.full_name))
     test_reporter_id = __get_test_reporter_id(codeclimate_repo)
 
     labs_dao.upsert_repository_record(
-        repository_id=repository_id,
+        repository_id=repo.full_name,
         grade=gpa,
         badge_token=badge_token,
         test_reporter_id=test_reporter_id,

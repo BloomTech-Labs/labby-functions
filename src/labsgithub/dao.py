@@ -31,7 +31,7 @@ class RepositoryTemplate(Enum):
     SITE = "template-site"
 
 
-def get_api():
+def get_api() -> Github:
     """Returns an instance of the API for the Labs org"""
     print("Authenticating with integration ID {}".format(INTEGRATION_ID))
     integration = GithubIntegration(
@@ -48,7 +48,7 @@ def get_api():
     access_token = integration.get_access_token(INSTALLATION_ID)
 
     # Use the access token to authenticate for the specific installation
-    github_api = Github(login_or_token=access_token.token)
+    github_api: Github = Github(login_or_token=access_token.token)
 
     return github_api
 

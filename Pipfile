@@ -13,12 +13,13 @@ coverage = "*"
 boto3 = "*"
 black = "==19.10b0"
 flake8 = "*"
+pylint = "*"
 
 [packages]
 requests = "*"
 jwt = "*"
 pygithub = "*"
-slackclient = "*"
+slackclient = "~=2.5.0"
 airtable-python-wrapper = "*"
 botostubs = "*"
 

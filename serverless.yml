@@ -89,12 +89,12 @@ provider:
     AIRTABLE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-airtable-api-key~true}
 
     # API key for Slack
-    SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-api-token~true}
+    SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-oauth-token~true}
 
 functions:
   build_teams:
     module: src
-    handler: teambuilding/handler.build_teams
+    handler: ${env:HANDLER_PATH_PREFIX, ""}teambuilding/handler.build_teams
     description: Builds teams automatically
 
   codeclimate_enqueue_all_product_repos:
@@ -119,14 +119,14 @@ functions:
           arn: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
           batchSize: 5
 
-  github_configuration_worker:
-    module: src
-    handler: labsgithub/handler.repo_configuration_worker
-    description: Processes a batch of GitHub repository records
-    events:
-      - sqs:
-          arn: !GetAtt QueueGithubRepoConfigurationWorker.Arn
-          batchSize: 5
+  # github_configuration_worker:
+  #   module: src
+  #   handler: labsgithub/handler.repo_configuration_worker
+  #   description: Processes a batch of GitHub repository records
+  #   events:
+  #     - sqs:
+  #         arn: !GetAtt QueueGithubRepoConfigurationWorker.Arn
+  #         batchSize: 5
 
   slack_drop_quotes:
     module: src
@@ -135,32 +135,6 @@ functions:
     events:
       # See https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
       - schedule: cron(0 15 ? * MON-FRI *)
-
-  # Under construction
-  # remind_students_about_late_peer_reviews:
-  #   handler: peerreviews/handler.remind_students_about_late_peer_reviews
-  #   events:
-  #     - schedule: cron(0 23 ? * FRI *)
-  # github_repos_provision_product_repos:
-  #   handler: github/repos.provision_product_repos
-  #   description: Ensures all product repos are provisioned or adopted.
-  #   events:
-  #     - schedule:
-  #         name: reconcile-all-github_provision_product_repos-github-repos
-  #         description: "Runs github_provision_product_repos"
-  #         rate: rate(15 minutes)
-  # github_metrics_push_hook:
-  #   handler: github/metrics.push_hook
-  #   events:
-  #     - http: POST github_push
-  # Under construction
-  # github_reconcile_push_events:
-  #   handler: github/handler.reconcile_push_events
-  #   description: Processes all push events in an organization and updates metrics.
-  # Under construction
-  # Notifies interviewees to schedule their mock interview
-  # notify_interviewees:
-  #   handler: mock_interviews/handler.notify_interviewees
 
 resources:
   Resources:
@@ -211,6 +185,13 @@ resources:
         Description: API key for Airtable
         SecretString: ${file(.env.yml):AIRTABLE_API_KEY}
 
+    SecretLabbySlackOAuthToken:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: labby-slack-oauth-token
+        Description: OAuth token for Slack
+        SecretString: ${file(.env.yml):SLACK_API_TOKEN}
+
     # A bucket for storing public-facing assets
     PublicAssetBucket:
       Type: AWS::S3::Bucket
@@ -227,16 +208,3 @@ resources:
           - MetricName: "403Count"
             MetricNamespace: "Labby/403s"
             MetricValue: "1"
-    # A place for Labby to remember stuff
-    # This is ephemeral state information for Labby
-    # LabbyMemory:
-    #   Type: AWS::DynamoDB::Table
-    #   Properties:
-    #     TableName: LabbyPersonMemory
-    #     BillingMode: PAY_PER_REQUEST
-    #     AttributeDefinitions:
-    #       - AttributeName: person_smt_record_id
-    #         AttributeType: S
-    #     KeySchema:
-    #       - AttributeName: person_smt_record_id
-    #         KeyType: HASH

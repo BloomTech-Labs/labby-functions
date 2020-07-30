@@ -14,8 +14,7 @@ ICON_URL = "https://labby-public-assets.s3.amazonaws.com/labby-small.png"
 
 
 def drop_quotes(_event, _context):
-    """Drops quotes into specified Slack channels.
-    """
+    """Drops quotes into specified Slack channels."""
     print("Getting all quote channels")
     channel_records = quotes.get_all_quote_channels()
     print("Got {} quote channels".format(len(channel_records)))

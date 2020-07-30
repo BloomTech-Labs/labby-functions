@@ -4,6 +4,7 @@ from airtable import Airtable
 HIPPOCAMPUS_BASE_ID = "appThDY89pV0kOGQT"
 
 QUOTES_TABLE_NAME = "Labby Quotes"
+
 QUOTE_CHANNELS_TABLE_NAME = "Labby Quote Channels"
 
 
