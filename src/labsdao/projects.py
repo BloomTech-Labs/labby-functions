@@ -33,10 +33,9 @@ def assign_student_to_project(student: dict, project: dict, score: int):
     projects_table = Airtable(SMT_BASE_ID, PROJECTS_TABLE)
 
     project_id = project["id"]
-    project_name = project["fields"]["Name - Cohort"]
+    project_name = project["fields"]["Name"]
     current_project_record = projects_table.get(project_id)
 
-    # print(student)
     student_id = student["fields"]["What is your name?"][0]
     student_name = student["fields"]["What is your name?"][0]
 
@@ -45,7 +44,7 @@ def assign_student_to_project(student: dict, project: dict, score: int):
         team_members = current_project_record["fields"]["Team Members"]
 
         if student_id not in team_members:
-            print("Adding {} to team {}".format(student_name, project_name))
+            print(f"Adding {student_name} to team {project_name}")
             team_members.append(student_id)
     else:
         print(

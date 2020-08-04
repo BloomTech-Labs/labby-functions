@@ -7,57 +7,107 @@ from ..labsdao import people as peopledao
 from ..labsdao import projects as projectsdao
 from typing import Dict, List
 
-HARDCODED_COHORT = "Labs25"
+TEAM_SIZE_WEIGHT = 200
 
-STUDENT_TABLE_NAME_FIELD = "Student Name"
-STUDENT_TABLE_TRACK_FIELD = "Student Course Text"
-STUDENT_TABLE_INCOMPATIBLE_STUDENT_NAMES_FIELD = "Incompatible Student Names"
+SURVEY_STUDENT_NAME_FIELD = "Student Name"
+SURVEY_PRODUCT_OPT_OUT_FIELD = "Product Opt Out Text"
 
-PROJECT_TABLE_NAME_FIELD = "Name"
-PROJECT_TABLE_PRODUCT_NAME_FIELD = "Product Name"
-PROJECT_TABLE_PROGRAMS_FIELD = "Programs Text"
+SURVEY_ETHNICITIES_FIELD = "Ethnicities"
+SURVEY_BASE_ETHNICITY_WEIGHT = 250
 
-SURVEY_TABLE_ASSERTIVENESS_FIELD = "How often do you speak up during group discussions?"
-SURVEY_TABLE_PLANNING_FIELD = "Do you plan ahead or play it by ear?"
+SURVEY_GENDER_FIELD = "Gender"
+SURVEY_GENDER_BASE_WEIGHT = 750
 
-SURVEY_TABLE_FRONTEND_FIELD = "How comfortable are you working on the frontend?"
-SURVEY_TABLE_FRONTEND_WEIGHT = 10
+SURVEY_TRACK_FIELD = "Track"
+SURVEY_INCOMPATIBLE_STUDENT_NAMES_FIELD = "Incompatible Student Names"
 
-SURVEY_TABLE_WEB_DESIGN_FIELD = "How comfortable are you at web design?"
-SURVEY_TABLE_WEB_DESIGN_WEIGHT = 5
+PROJECT_NAME_FIELD = "Name"
+PROJECT_PRODUCT_NAME_FIELD = "Product Name"
+PROJECT_PROGRAMS_FIELD = "Programs Text"
 
-SURVEY_TABLE_DATA_MODELING_FIELD = "How comfortable are you at data modeling?"
-SURVEY_TABLE_DATA_MODELING_WEIGHT = 5
+SURVEY_ASSERTIVENESS_FIELD = "How often do you speak up during group discussions?"
+SURVEY_ASSERTIVENESS_WEIGHT = 50
+
+SURVEY_PLANNING_FIELD = "Do you plan ahead or play it by ear?"
+SURVEY_PLANNING_WEIGHT = 50
+
+SURVEY_VISION_FIELD = "Are you more interested in the big picture or details?"
+SURVEY_VISION_WEIGHT = 50
+
+SURVEY_FRONTEND_FIELD = "How comfortable are you working on the frontend?"
+SURVEY_FRONTEND_WEIGHT = 100
+
+SURVEY_WEB_DESIGN_FIELD = "How comfortable are you at web design?"
+SURVEY_WEB_DESIGN_WEIGHT = 100
+
+SURVEY_DATA_MODELING_FIELD = "How comfortable are you at data modeling?"
+SURVEY_DATA_MODELING_WEIGHT = 100
 
 SURVEY_STUDENT_TIMEZONE_FIELD = "Student Timezone Offset"
-SURVEY_STUDENT_TIMEZONE_WEIGHT = 5
-
-SURVEY_TABLE_PRODUCT_OPT_OUT_FIELD = "Product Opt Out Text"
-SURVEY_TABLE_ETHNICITIES_FIELD = "Ethnicities"
-SURVEY_TABLE_GENDER_FIELD = "Gender"
-
-SCORE_WEIGHT_TEAM_SIZE = 200
+SURVEY_STUDENT_TIMEZONE_WEIGHT = 150
 
 AssignmentTuple = namedtuple("Assignment", ["project", "student", "score"])
 
-students: List[dict] = []
+surveys: List[dict] = []
 projects: List[dict] = []
 assignments: List[AssignmentTuple] = []
 
 
 def build_teams(event, context):
-    global students, projects
+    """Main AWS Lambda handeler function that orchestrates the calculation.
 
-    students = peopledao.get_all_student_surveys(HARDCODED_COHORT)
-    print("Found {} students".format(len(students)))
+    Parameters:
+        event -- AWS Lambda event
+        context -- AWS Lambda context
 
-    projects = projectsdao.get_all_active_projects(HARDCODED_COHORT)
+    Returns:
+        Nothing
+    """
+    global surveys, projects
+
+    if not event:
+        raise ("You must provide the cohort ID as data in the event")
+
+    # Use the DAO to grab the list of all of the surveys
+    surveys = peopledao.get_all_student_surveys(event)
+    print("Found {} surveys".format(len(surveys)))
+
+    # Sort the incoming surveys to help the algorithm produce the best results
+    # Note: Can't have just one of the element reverse sorted, so must to multiple sorts
+    #       Multiple sorts must be performed _least_ significant to _most_
+    surveys.sort(
+        key=lambda survey: (str(survey["fields"].get(SURVEY_TRACK_FIELD, ""))),
+        reverse=False,
+    )
+    surveys.sort(
+        key=lambda survey: (
+            str(survey["fields"].get(SURVEY_PRODUCT_OPT_OUT_FIELD, ""))
+        ),
+        reverse=True,
+    )
+    surveys.sort(
+        key=lambda survey: (str(survey["fields"].get(SURVEY_ETHNICITIES_FIELD, ""))),
+        reverse=False,
+    )
+    surveys.sort(
+        key=lambda survey: (str(survey["fields"].get(SURVEY_GENDER_FIELD, ""))),
+        reverse=True,
+    )
+
+    for survey in surveys:
+        print(
+            f"{survey['fields'].get('Track', '-'):<10}"
+            f"{survey['fields'].get('Gender', '-'):<30}"
+            f"{str(survey['fields'].get('Ethnicities', '-')):<50}"
+        )
+
+    projects = projectsdao.get_all_active_projects(event)
     print("Found {} projects".format(len(projects)))
 
-    while students:
+    while surveys:
         print("\n")
         print("*" * 120)
-        print("Making pass with {} students left".format(len(students)))
+        print("Making pass with {} students left".format(len(surveys)))
         print("*" * 120)
 
         best_assignment = __get_best_assignment()
@@ -65,11 +115,11 @@ def build_teams(event, context):
         if best_assignment.project is None:
             print("\n")
             print("*" * 120)
-            print("!!!Unable to match student: {}", students.pop())
+            print("!!!Unable to match student: {}", surveys.pop())
             print("*" * 120)
         else:
-            project_name = best_assignment.project["fields"][PROJECT_TABLE_NAME_FIELD]
-            student_name = best_assignment.student["fields"][STUDENT_TABLE_NAME_FIELD][
+            project_name = best_assignment.project["fields"][PROJECT_NAME_FIELD]
+            student_name = best_assignment.student["fields"][SURVEY_STUDENT_NAME_FIELD][
                 0
             ]
 
@@ -84,7 +134,7 @@ def build_teams(event, context):
 
             assignments.append(best_assignment)
 
-            students.remove(best_assignment.student)
+            surveys.remove(best_assignment.student)
 
     print("\n")
     print("=" * 120)
@@ -94,19 +144,19 @@ def build_teams(event, context):
     # This sorting is just so they display nicely in the output
     assignments.sort(
         key=lambda x: (
-            x[0]["fields"].get(PROJECT_TABLE_NAME_FIELD),
-            x[1]["fields"].get(STUDENT_TABLE_TRACK_FIELD),
-            x[1]["fields"].get(SURVEY_TABLE_GENDER_FIELD, ""),
-            str(x[1]["fields"].get(SURVEY_TABLE_ETHNICITIES_FIELD, "")),
+            x[0]["fields"].get(PROJECT_NAME_FIELD),
+            x[1]["fields"].get(SURVEY_TRACK_FIELD),
+            x[1]["fields"].get(SURVEY_GENDER_FIELD, ""),
+            str(x[1]["fields"].get(SURVEY_ETHNICITIES_FIELD, "")),
         )
     )
 
     # Output the final assignments and write them to the DAO
-    TABLE_FORMAT_STRING = "{:<35} {:>6} {:<30} {:<70} {:<55} {:>5}"
+    TABLE_FORMAT_STRING = "{:<35} {:>6} {:<30} {:<85} {:<55} {:>5}"
 
     print(
         TABLE_FORMAT_STRING.format(
-            "Project", "Track", "Gender", "Ethnicities", "Opt Out", "TZ"
+            "Project", SURVEY_TRACK_FIELD, "Gender", "Ethnicities", "Opt Out", "TZ",
         )
     )
 
@@ -115,12 +165,12 @@ def build_teams(event, context):
     for assignment in assignments:
         print(
             TABLE_FORMAT_STRING.format(
-                assignment.project["fields"][PROJECT_TABLE_NAME_FIELD],
-                assignment.student["fields"][STUDENT_TABLE_TRACK_FIELD],
-                assignment.student["fields"].get(SURVEY_TABLE_GENDER_FIELD, "-"),
+                assignment.project["fields"][PROJECT_NAME_FIELD],
+                assignment.student["fields"][SURVEY_TRACK_FIELD],
+                assignment.student["fields"].get(SURVEY_GENDER_FIELD, "-"),
                 str(
                     assignment.student["fields"].get(
-                        SURVEY_TABLE_ETHNICITIES_FIELD, list("-")
+                        SURVEY_ETHNICITIES_FIELD, list("-")
                     )
                 ).strip("[]"),
                 str(
@@ -131,9 +181,9 @@ def build_teams(event, context):
         )
 
         # This actually writes the teams to the DAO
-        # projectsdao.assign_student_to_project(
-        #     assignment.student, assignment.project, assignment.score
-        # )
+        projectsdao.assign_student_to_project(
+            assignment.student, assignment.project, assignment.score
+        )
 
 
 def __get_best_assignment() -> AssignmentTuple:
@@ -142,17 +192,17 @@ def __get_best_assignment() -> AssignmentTuple:
     best_assignment = AssignmentTuple(None, None, None)
 
     print(
-        "Finding best assignment for {} projects and {} students".format(
-            len(projects), len(students)
-        )
+        f"Finding best assignment for {len(projects)} projects and "
+        f"{len(surveys)} students"
     )
 
     for project in projects:
-        for student in students:
-            project_name = project["fields"][PROJECT_TABLE_NAME_FIELD]
-            student_name = student["fields"][STUDENT_TABLE_NAME_FIELD][0]
-            print("==================================================================")
-            print("Start scoring {} - {}".format(project_name, student_name))
+        for student in surveys:
+            project_name = project["fields"][PROJECT_NAME_FIELD]
+            student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
+
+            print("=" * 120)
+            print(f"Start scoring {project_name} - {student_name}")
 
             # Create the dict for the student if it doesn't exist
             if project["id"] not in scores:
@@ -185,7 +235,7 @@ def __get_best_assignment() -> AssignmentTuple:
                     highscore = score
 
             print("\nDone scoring {} - {}".format(project_name, student_name))
-            print("==================================================================")
+            print("=" * 120)
 
     return best_assignment
 
@@ -194,41 +244,41 @@ def __get_score(project: dict, student: dict) -> int:
     score = 0
 
     # print(f"Project {project}")
-    project_name = project["fields"][PROJECT_TABLE_NAME_FIELD]
-    student_name = student["fields"][STUDENT_TABLE_NAME_FIELD][0]
+    project_name = project["fields"][PROJECT_NAME_FIELD]
+    student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
     print("Scoring {} for project {}".format(student_name, project_name))
 
     # =======================================================================================
     # Match student track to project required track
     # =======================================================================================
     print("\n== Track Scoring ==")
-    project_tracks = project["fields"][PROJECT_TABLE_PROGRAMS_FIELD]
-    print("Project programs: {}".format(project_tracks))
+    project_tracks_upper = project["fields"][PROJECT_PROGRAMS_FIELD].upper()
+    student_track_upper = student["fields"].get(SURVEY_TRACK_FIELD, "").upper()
 
-    student_track = student["fields"][STUDENT_TABLE_TRACK_FIELD]
-    print("Student Track: {}".format(student_track))
-
-    if student_track.upper() not in project_tracks.upper():
+    if student_track_upper not in project_tracks_upper:
         print(
-            "Student {} track not needed in project {}".format(
-                student_name, project_name
-            )
+            f"Student {student_name} track {student_track_upper} "
+            f"not needed in {project_name}: {project_tracks_upper}"
         )
+
         return -10000
+    else:
+        print(
+            f"Student {student_name} track {student_track_upper} "
+            f"needed in {project_tracks_upper}"
+        )
 
     # =======================================================================================
     # Check to see if the student has opted out of this product
     # =======================================================================================
     print("\n== Product Opt Out Scoring ==")
-    student_opt_out_products = student["fields"].get(
-        SURVEY_TABLE_PRODUCT_OPT_OUT_FIELD, None
-    )
+    student_opt_out_products = student["fields"].get(SURVEY_PRODUCT_OPT_OUT_FIELD, None)
     if student_opt_out_products:
         print(
             f"Student {student_name} opted out of products: {student_opt_out_products}"
         )
 
-        product_name = project["fields"][PROJECT_TABLE_PRODUCT_NAME_FIELD][0]
+        product_name = project["fields"][PROJECT_PRODUCT_NAME_FIELD][0]
         if product_name.upper() in (x.upper() for x in student_opt_out_products):
             print(f"Will not place {student_name} on product {product_name}")
             return -10000
@@ -281,59 +331,48 @@ def __get_score(project: dict, student: dict) -> int:
     # =======================================================================================
     # These calculations try to force the team to average particular skills/traits
     # =======================================================================================
-    print("\n== {} ==".format(SURVEY_TABLE_FRONTEND_FIELD))
+    print("\n== {} ==".format(SURVEY_FRONTEND_FIELD))
     web_focus_score = __calculate_score_for_average_goal(
-        project,
-        student,
-        SURVEY_TABLE_FRONTEND_FIELD,
-        3.00,
-        SURVEY_TABLE_FRONTEND_WEIGHT,
+        project, student, SURVEY_FRONTEND_FIELD, 3.00, SURVEY_FRONTEND_WEIGHT,
     )
     score += web_focus_score
 
-    print("\n== {} ==".format(SURVEY_TABLE_DATA_MODELING_FIELD))
+    print("\n== {} ==".format(SURVEY_DATA_MODELING_FIELD))
     web_data_modeling_score = __calculate_score_for_average_goal(
-        project,
-        student,
-        SURVEY_TABLE_DATA_MODELING_FIELD,
-        3.00,
-        SURVEY_TABLE_DATA_MODELING_WEIGHT,
+        project, student, SURVEY_DATA_MODELING_FIELD, 3.00, SURVEY_DATA_MODELING_WEIGHT,
     )
     score += web_data_modeling_score
 
-    print("\n== {} ==".format(SURVEY_TABLE_WEB_DESIGN_FIELD))
+    print("\n== {} ==".format(SURVEY_WEB_DESIGN_FIELD))
     web_design_score = __calculate_score_for_average_goal(
-        project,
-        student,
-        SURVEY_TABLE_WEB_DESIGN_FIELD,
-        3.00,
-        SURVEY_TABLE_WEB_DESIGN_WEIGHT,
+        project, student, SURVEY_WEB_DESIGN_FIELD, 3.00, SURVEY_WEB_DESIGN_WEIGHT,
     )
     score += web_design_score
 
-    print("\n== {} ==".format(SURVEY_TABLE_ASSERTIVENESS_FIELD))
+    print("\n== {} ==".format(SURVEY_ASSERTIVENESS_FIELD))
     assertiveness_score = __calculate_score_for_average_goal(
-        project, student, SURVEY_TABLE_ASSERTIVENESS_FIELD, 3.00, 5
+        project, student, SURVEY_ASSERTIVENESS_FIELD, 3.00, SURVEY_ASSERTIVENESS_WEIGHT,
     )
     score += assertiveness_score
 
-    print("\n== {} ==".format(SURVEY_TABLE_PLANNING_FIELD))
+    print("\n== {} ==".format(SURVEY_PLANNING_FIELD))
     planning_score = __calculate_score_for_average_goal(
-        project, student, SURVEY_TABLE_PLANNING_FIELD, 3.00, 5
+        project, student, SURVEY_PLANNING_FIELD, 3.00, SURVEY_PLANNING_WEIGHT,
     )
     score += planning_score
 
-    VISION = "Are you more interested in the big picture or details?"
-    print("\n== {} ==".format(VISION))
-    vision_score = __calculate_score_for_average_goal(project, student, VISION, 3.00, 5)
+    print("\n== {} ==".format(SURVEY_VISION_FIELD))
+    vision_score = __calculate_score_for_average_goal(
+        project, student, SURVEY_VISION_FIELD, 3.00, SURVEY_VISION_WEIGHT
+    )
     score += vision_score
 
     return score
 
 
 def __calculate_team_size_score(project: dict, student: dict) -> int:
-    project_name = project["fields"][PROJECT_TABLE_NAME_FIELD]
-    student_track = student["fields"][STUDENT_TABLE_TRACK_FIELD]
+    project_name = project["fields"][PROJECT_NAME_FIELD]
+    student_track = student["fields"][SURVEY_TRACK_FIELD]
 
     # Calculate the current average team size for this track
     average_team_size = __get_average_team_size_for_track(student_track)
@@ -346,7 +385,7 @@ def __calculate_team_size_score(project: dict, student: dict) -> int:
         )
     )
 
-    score = math.ceil(SCORE_WEIGHT_TEAM_SIZE * (average_team_size - team_member_count))
+    score = math.ceil(TEAM_SIZE_WEIGHT * (average_team_size - team_member_count))
 
     return score
 
@@ -354,17 +393,14 @@ def __calculate_team_size_score(project: dict, student: dict) -> int:
 def __get_average_team_size_for_track(track: str) -> float:
     assignments_for_track = []
     for assignment in assignments:
-        if (
-            assignment.student["fields"][STUDENT_TABLE_TRACK_FIELD].upper()
-            == track.upper()
-        ):
+        if assignment.student["fields"][SURVEY_TRACK_FIELD].upper() == track.upper():
             assignments_for_track.append(assignment)
 
     number_of_assignments = len(assignments_for_track)
 
     teams_requiring_track = []
     for project in projects:
-        if track.upper() in project["fields"][PROJECT_TABLE_PROGRAMS_FIELD].upper():
+        if track.upper() in project["fields"][PROJECT_PROGRAMS_FIELD].upper():
             teams_requiring_track.append(project)
 
     number_of_teams = len(teams_requiring_track)
@@ -382,13 +418,14 @@ def __get_average_team_size_for_track(track: str) -> float:
 def __calculate_score_for_average_goal(
     project: dict, student: dict, survey_field: str, desired_average: float, weight: int
 ) -> int:
-    project_name = project["fields"][PROJECT_TABLE_NAME_FIELD]
-    student_name = student["fields"][STUDENT_TABLE_NAME_FIELD][0]
+    project_name = project["fields"][PROJECT_NAME_FIELD]
+    student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
     print(
-        "Calculating score for: Project({}) - Student({}) - Field({}) - Desired Average({})".format(
-            project_name, student_name, survey_field, desired_average
-        )
+        f"Calculating score for: Project({project_name}) - "
+        f"Student({student_name}) - "
+        f"Field({survey_field}) - "
+        f"Desired Average({desired_average})"
     )
 
     # Check to see if the student responded to the survey, question
@@ -467,8 +504,8 @@ def __calculate_score_for_average_goal(
 def __calculate_student_to_team_compatibility_score(
     project: dict, student: dict
 ) -> int:
-    project_name = project["fields"][PROJECT_TABLE_NAME_FIELD]
-    student_name = student["fields"][STUDENT_TABLE_NAME_FIELD][0]
+    project_name = project["fields"][PROJECT_NAME_FIELD]
+    student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
     print(
         "Calculating compatibility score for: Project({}) - Student({})".format(
@@ -478,12 +515,12 @@ def __calculate_student_to_team_compatibility_score(
 
     # Check to see if the student responded to the survey, question
     # print(student['fields'])
-    if STUDENT_TABLE_INCOMPATIBLE_STUDENT_NAMES_FIELD not in student["fields"]:
+    if SURVEY_INCOMPATIBLE_STUDENT_NAMES_FIELD not in student["fields"]:
         # If not, this has no effect on the score
         return 0
 
     student_not_compatible_list = student["fields"][
-        STUDENT_TABLE_INCOMPATIBLE_STUDENT_NAMES_FIELD
+        SURVEY_INCOMPATIBLE_STUDENT_NAMES_FIELD
     ]
     print(
         "Checking incompatibility list for student {}: {}".format(
@@ -495,7 +532,7 @@ def __calculate_student_to_team_compatibility_score(
     team_assignments = __get_team_assignments(project)
 
     for assignment in team_assignments:
-        assigned_student_name = assignment.student["fields"][STUDENT_TABLE_NAME_FIELD][
+        assigned_student_name = assignment.student["fields"][SURVEY_STUDENT_NAME_FIELD][
             0
         ]
 
@@ -506,27 +543,24 @@ def __calculate_student_to_team_compatibility_score(
         )
         if assigned_student_name in student_not_compatible_list:
             print(
-                "*** Student {} says they don't want to work with one of ({}), who are already assigned to project {}".format(
-                    student_name, student_not_compatible_list, project_name
-                )
+                f"*** Student {student_name} says they don't want to work with one of "
+                f"({student_not_compatible_list}), who are already assigned to project "
+                f"{project_name}"
             )
 
             # Definitely not a good fit for the team
             return -100000
 
         # print(assignment.student['fields'])
-        if (
-            STUDENT_TABLE_INCOMPATIBLE_STUDENT_NAMES_FIELD
-            in assignment.student["fields"]
-        ):
+        if SURVEY_INCOMPATIBLE_STUDENT_NAMES_FIELD in assignment.student["fields"]:
             for incompatibleStudent in assignment.student["fields"][
-                STUDENT_TABLE_INCOMPATIBLE_STUDENT_NAMES_FIELD
+                SURVEY_INCOMPATIBLE_STUDENT_NAMES_FIELD
             ]:
                 if student_name.upper() == incompatibleStudent.upper():
                     print(
-                        "*** Assigned student {} says they don't want to work with {} one of whom is assigned to project {}".format(
-                            assigned_student_name, student_name, project_name
-                        )
+                        f"*** Assigned student {assigned_student_name} says they don't "
+                        f"want to work with {student_name} one of whom is assigned to "
+                        f"project {project_name}"
                     )
 
                     # Definitely not a good fit for the team
@@ -547,8 +581,8 @@ def __calculate_ethnic_diversity_score(project: dict, student: dict) -> int:
     Returns:
         A score
     """
-    project_name = project["fields"][PROJECT_TABLE_NAME_FIELD]
-    student_name = student["fields"][STUDENT_TABLE_NAME_FIELD][0]
+    project_name = project["fields"][PROJECT_NAME_FIELD]
+    student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
     print(
         "Calculating ethnic pairing score for: Project({}) - Student({})".format(
@@ -557,7 +591,7 @@ def __calculate_ethnic_diversity_score(project: dict, student: dict) -> int:
     )
 
     # Get the ethnicities specified by the student
-    student_ethnicities = student["fields"].get(SURVEY_TABLE_ETHNICITIES_FIELD, None)
+    student_ethnicities = student["fields"].get(SURVEY_ETHNICITIES_FIELD, None)
     if not student_ethnicities:
         # The student didn't specify ethnicities, so we can't calculate a score
         return 0
@@ -569,7 +603,7 @@ def __calculate_ethnic_diversity_score(project: dict, student: dict) -> int:
     team_ethnicities = []
     for assignment in team_assignments:
         assigned_student_ethnicities = assignment.student["fields"].get(
-            SURVEY_TABLE_ETHNICITIES_FIELD, None
+            SURVEY_ETHNICITIES_FIELD, None
         )
 
         if assigned_student_ethnicities:
@@ -584,18 +618,18 @@ def __calculate_ethnic_diversity_score(project: dict, student: dict) -> int:
     ethnicity_counter.update(team_ethnicities)
 
     # Check each of the student's listed ethnicities and take the highest score
-    best_ethnicity_score = -100
+    best_ethnicity_score = 0
     for student_ethnicity in student_ethnicities:
         matching_ethnicity_count = ethnicity_counter.get(student_ethnicity)
 
-        current_ethnicity_score = -100
+        current_ethnicity_score = 0
 
         if matching_ethnicity_count == 0:
             # This is good, as it will make the team more diverse
-            current_ethnicity_score = 100
-        if matching_ethnicity_count == 1:
+            current_ethnicity_score = SURVEY_BASE_ETHNICITY_WEIGHT
+        elif matching_ethnicity_count == 1:
             # This is better, as it will pair students with like ethnicities
-            current_ethnicity_score = 200
+            current_ethnicity_score = SURVEY_BASE_ETHNICITY_WEIGHT * 2
 
         # Check to see if this is a better match
         if current_ethnicity_score > best_ethnicity_score:
@@ -632,8 +666,8 @@ def __calculate_gender_diversity_score(project: dict, student: dict) -> int:
     Returns:
         A score
     """
-    project_name = project["fields"][PROJECT_TABLE_NAME_FIELD]
-    student_name = student["fields"][STUDENT_TABLE_NAME_FIELD][0]
+    project_name = project["fields"][PROJECT_NAME_FIELD]
+    student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
     print(
         "Calculating gender pairing score for: Project({}) - Student({})".format(
@@ -642,7 +676,7 @@ def __calculate_gender_diversity_score(project: dict, student: dict) -> int:
     )
 
     # Get the gender specified by the student
-    student_gender = student["fields"].get(SURVEY_TABLE_GENDER_FIELD, None)
+    student_gender = student["fields"].get(SURVEY_GENDER_FIELD, None)
     if not student_gender:
         # The student didn't provide a gender, so we can't calculate a score
         return 0
@@ -654,7 +688,7 @@ def __calculate_gender_diversity_score(project: dict, student: dict) -> int:
     team_gender_values = []
     for assignment in team_assignments:
         assigned_student_gender = assignment.student["fields"].get(
-            SURVEY_TABLE_GENDER_FIELD, None
+            SURVEY_GENDER_FIELD, None
         )
 
         if assigned_student_gender:
@@ -670,14 +704,14 @@ def __calculate_gender_diversity_score(project: dict, student: dict) -> int:
 
     if matching_gender_count == 0:
         # This is good, as it will make the team more diverse
-        return 100
-    if matching_gender_count == 1:
+        return SURVEY_GENDER_BASE_WEIGHT
+    elif matching_gender_count == 1:
         # This is better, as it will pair students with like genders
-        return 200
+        return SURVEY_GENDER_BASE_WEIGHT * 2
     else:
         # There are already at least 2 student with this gender identity, so we won't
         # prefer this
-        return matching_gender_count * -100
+        return 0
 
 
 def __get_gender_counter() -> Counter:
@@ -711,7 +745,7 @@ def __count_team_assignments(project: dict, track: str) -> float:
     for assignment in assignments:
         if assignment.project["id"] == project["id"]:
             if (
-                assignment.student["fields"][STUDENT_TABLE_TRACK_FIELD].upper()
+                assignment.student["fields"][SURVEY_TRACK_FIELD].upper()
                 == track.upper()
             ):
                 number_of_assignments += 1
