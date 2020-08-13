@@ -140,7 +140,9 @@ functions:
     module: src
     handler: labsaws/handler.aws_deprovision_users
     description: Identifies unused student AWS accounts.
-
+    events:
+      # See https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+      - schedule: cron(0 2 ? * MON-FRI *)
 resources:
   Resources:
     # For queuing up jobs for the Code Climate Repo
