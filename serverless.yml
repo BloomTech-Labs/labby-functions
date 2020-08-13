@@ -118,7 +118,7 @@ functions:
       - sqs:
           arn: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
           batchSize: 5
-
+  
   # github_configuration_worker:
   #   module: src
   #   handler: labsgithub/handler.repo_configuration_worker
@@ -127,7 +127,7 @@ functions:
   #     - sqs:
   #         arn: !GetAtt QueueGithubRepoConfigurationWorker.Arn
   #         batchSize: 5
-
+  
   slack_drop_quotes:
     module: src
     handler: labsslack/quotes.drop_quotes
@@ -135,6 +135,11 @@ functions:
     events:
       # See https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
       - schedule: cron(0 15 ? * MON-FRI *)
+
+  aws_deprovision_users:
+    module: src
+    handler: labsaws/handler.aws_deprovision_users
+    description: Identifies unused student AWS accounts.
 
 resources:
   Resources:
