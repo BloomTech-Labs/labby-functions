@@ -57,8 +57,8 @@ provider:
       Resource: "arn:aws:s3:::${self:custom.public-asset-bucket}"
     - Effect: Allow
       Action:
-        - s3:PutObject
-        - s3:PutObjectAcl
+        - "s3:PutObject"
+        - "s3:PutObjectAcl"
         - "s3:GetObject"
         - "s3:DeleteObject"
       Resource: "arn:aws:s3:::${self:custom.public-asset-bucket}/*"
@@ -143,12 +143,16 @@ resources:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "CodeClimateRepoWorkerQueue"
+        # Note: This must be greater than the timeout of the associated Lambda function
+        VisibilityTimeout: 360
 
     # For queueing up jobs to monitor repo configuration
     QueueGithubRepoConfigurationWorker:
       Type: "AWS::SQS::Queue"
       Properties:
         QueueName: "GithubRepoConfigurationWorker"
+        # Note: This must be greater than the timeout of the associated Lambda function
+        VisibilityTimeout: 360
 
     SecretLabbyGithubAppIntegrationID:
       Type: AWS::SecretsManager::Secret
