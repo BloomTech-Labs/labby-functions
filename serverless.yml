@@ -5,6 +5,7 @@ plugins:
   - serverless-cloudside-plugin
   - serverless-s3-deploy
   - serverless-offline
+  - serverless-step-functions
 
 package:
   # See https://www.serverless.com/plugins/serverless-python-requirements/
