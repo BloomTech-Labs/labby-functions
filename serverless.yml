@@ -92,6 +92,16 @@ provider:
     SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-oauth-token~true}
 
 functions:
+  check_account_access:
+    module: src
+    handler: ${env:HANDLER_PATH_PREFIX, ""}labsaws/check_account_access.handler
+    description: Ensures that Labby has access to all student accounts
+    environment:
+      # The ID of the root account
+      ROOT_ACCOUNT_ID: ${file(.env.yml):ROOT_ACCOUNT_ID}
+      # The ID of the OU that student AWS accounts are attached to
+      STUDENT_ACCOUNT_OU_ID: ${file(.env.yml):STUDENT_ACCOUNT_OU_ID}
+
   build_teams:
     module: src
     handler: ${env:HANDLER_PATH_PREFIX, ""}teambuilding/handler.build_teams
