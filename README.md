@@ -67,6 +67,20 @@ Labby interacts with Airtable using an [API key](https://airtable.com/api):
 
 The `assets` folder contains various static assets for use by the functions. Be aware that during deployment the `serverless-s3-deploy` plugin will automatically ship _everything in the assets folder_ to a _public, readable by the whole wide world web_ S3 bucket.
 
+## Environment
+
+You're going to need to create a `.env.yml` file in the root after you clone. It must contain:
+
+- GITHUB_ORG_NAME: The name of the GitHub org for Labs student product and project repos
+- GITHUB_APP_INTEGRATION_ID: The GitHub App Integration ID is the ID of your GitHub App. You can find it in the "About" section in the "General" tab of your GitHub App (Called App ID).
+- GITHUB_APP_ORG_INSTALLATION_ID: For talking to the Github API
+- GITHUB_APP_PRIVATE_KEY: The Github app private key
+- CODE_CLIMATE_ACCESS_TOKEN: An API token for talking to Code Climate
+- AIRTABLE_API_KEY: An API token for talking to AirTable
+- SLACK_API_TOKEN: An API token for talking to Slack
+- STUDENT_ACCOUNT_OU_ID: The ID of the student account OU (e.g. "ou-1234-12345678")
+- ROOT_ACCOUNT_ID: The ID of the root account (e.g. 123456789123)
+
 ## Running Local
 
 - install [pipenv](https://github.com/pypa/pipenv)
