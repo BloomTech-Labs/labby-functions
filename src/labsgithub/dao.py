@@ -1,14 +1,17 @@
 # Standard library imports
 import os
+import logging
 
 from enum import Enum
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 # Third party imports
 # Note: https://pygithub.readthedocs.io/en/latest/index.html
 #       https://github.com/PyGithub/PyGithub
-from github import Github
+from github import Github, PaginatedList, Repository
 from github import GithubIntegration
-from github import UnknownObjectException
+from github import UnknownObjectException, GithubException
 
 # These are used to authenticate Labby as a Github App
 # See https://developer.github.com/apps/about-apps/#about-github-apps
@@ -101,3 +104,17 @@ def does_repo_exist(organization, repository_name):
 #     else:
 #         raise Exception(
 #             "Unable to generate repository: {}".format(response.text))
+
+def filter_commit_age(months_old: int, repos: PaginatedList) -> [Repository]:
+    recent_repos = []
+    months_ago = datetime.today() + relativedelta(months=-months_old)
+    logging.info("filtering repos with commit activity in past {} month(s)".format(months_ago))
+    for repo in repos:
+        try:
+            commits = repo.get_commits(since=months_ago)
+            if commits and commits.totalCount > 0:
+                recent_repos.append(repo)
+
+        except GithubException as e:
+            logging.info("repo {} has exception: {}".format(repo.name, e.args[1]['message']))
+    return recent_repos
