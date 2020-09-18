@@ -4,6 +4,7 @@ plugins:
   - serverless-python-requirements
   - serverless-cloudside-plugin
   - serverless-s3-deploy
+  - serverless-offline-sqs
   - serverless-offline
 
 package:
@@ -110,6 +111,17 @@ functions:
           arn: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
           batchSize: 5
 
+  sonarcloud_enqueue_active_product_repos:
+    module: src
+    handler: src/labssonarcloud/handler.enqueue_all_product_repos
+    description: Gets a list of all active product repositories and queues them up in SQS for processing.
+    timeout: 300
+    environment:
+      SONARCLOUD_REPO_WORKER_SQS_URL: 
+        Ref: QueueSonarCloudRepoWorkerQueue
+    events:
+      - schedule: rate(90 minutes)
+
   # github_configuration_worker:
   #   module: src
   #   handler: labsgithub/handler.repo_configuration_worker
@@ -174,6 +186,7 @@ resources:
                     - "sqs:SendMessage"
                   Resource:
                     - !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
+                    - !GetAtt QueueSonarCloudRepoWorkerQueue.Arn
                     - !GetAtt QueueGithubRepoConfigurationWorker.Arn
                 - Effect: "Allow"
                   Action:
@@ -197,6 +210,13 @@ resources:
       Properties:
         QueueName: "CodeClimateRepoWorkerQueue"
         # Note: This must be greater than the timeout of the associated Lambda function
+        VisibilityTimeout: 360
+
+    # For queuing up jobs for the Sonar Could project
+    QueueSonarCloudRepoWorkerQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "SonarCloudRepoWorkerQueue"
         VisibilityTimeout: 360
 
     # For queueing up jobs to monitor repo configuration
