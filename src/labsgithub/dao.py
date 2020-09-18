@@ -49,7 +49,7 @@ def get_api() -> Github:
 
     # Grab an access token for the Labs org installation
     access_token = integration.get_access_token(INSTALLATION_ID)
-
+    # print("access token for {}".format(access_token))
     # Use the access token to authenticate for the specific installation
     github_api: Github = Github(login_or_token=access_token.token)
 
