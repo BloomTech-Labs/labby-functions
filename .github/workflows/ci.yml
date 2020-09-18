@@ -1,9 +1,10 @@
-name: Push to Master
+name: Pull Request to Master
 
 on:
+  pull_request:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   coverage:
@@ -21,10 +22,3 @@ jobs:
       - run: make install-dev
         env:
           PIPENV_NOSPIN: 1
-
-      - uses: paambaati/codeclimate-action@v2.4.0
-        env:
-          CC_TEST_REPORTER_ID: ${{ secrets.CodeClimateReporterId }}
-        with:
-          coverageCommand: make coverage-xml
-          debug: true
