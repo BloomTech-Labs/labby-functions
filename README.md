@@ -83,6 +83,10 @@ You're going to need to create a `.env.yml` file in the root after you clone. It
 
 ## Running Local
 
+> If you are using aws profiles then you must have an env var AWS_PROFILE set to the profile name. (might as well add AWS_REGION to be safe)
+>
+> `export AWS_PROFILE=labby && export AWS_REGION=us-east-1`
+
 - install [pipenv](https://github.com/pypa/pipenv)
 - `pipenv install --dev`
 - `pipenv shell`
