@@ -72,6 +72,10 @@ provider:
     # API key for Slack
     SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-oauth-token~true}
 
+    # Credentials for authenticating to Lambda School Atlas service
+    ATLAS_LABBY_USERNAME: ${ssm:/aws/reference/secretsmanager/labby-atlas-username~true}
+    ATLAS_LABBY_PASSWORD: ${ssm:/aws/reference/secretsmanager/labby-atlas-password~true}
+
 functions:
   check_account_access:
     module: src
@@ -126,6 +130,11 @@ functions:
     events:
       # See https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
       - schedule: cron(0 15 ? * MON-FRI *)
+
+  reconcile_push_events:
+    module: src
+    handler: ${env:HANDLER_PATH_PREFIX, ""}labsgithub/metrics.reconcile_push_events
+    description: Updates all GitHub metrics for all current Labs students
 
 resources:
   Resources:
