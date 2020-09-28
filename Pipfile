@@ -22,6 +22,8 @@ pygithub = "*"
 slackclient = "~=2.5.0"
 airtable-python-wrapper = "*"
 botostubs = "*"
+gql = "*"
+cachetools = "*"
 
 [pipenv]
 allow_prereleases = true
