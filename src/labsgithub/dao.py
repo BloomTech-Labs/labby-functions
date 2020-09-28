@@ -36,16 +36,10 @@ class RepositoryTemplate(Enum):
 
 def get_api() -> Github:
     """Returns an instance of the API for the Labs org"""
-    print("Authenticating with integration ID {}".format(INTEGRATION_ID))
-    integration = GithubIntegration(
-        integration_id=INTEGRATION_ID, private_key=PRIVATE_KEY
-    )
+    print(f"Authenticating with integration ID {INTEGRATION_ID} and key {PRIVATE_KEY[0:45]}...")
+    integration = GithubIntegration(integration_id=INTEGRATION_ID, private_key=PRIVATE_KEY)
 
-    print(
-        "Getting access token for {} from {}".format(
-            INSTALLATION_ID, integration.base_url
-        )
-    )
+    print("Getting access token for {} from {}".format(INSTALLATION_ID, integration.base_url))
 
     # Grab an access token for the Labs org installation
     access_token = integration.get_access_token(INSTALLATION_ID)
