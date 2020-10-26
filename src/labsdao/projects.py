@@ -1,4 +1,5 @@
 # Core imports
+import os
 
 # Third party imports
 from airtable import Airtable
@@ -7,9 +8,7 @@ SMT_BASE_ID = "appvMqcwCQosrsHhM"
 
 PROJECTS_TABLE = "Labs - Projects"
 
-PROJECTS_WHERE_COHORT_AND_ACTIVE = (
-    """AND(UPPER({{Cohort}}) = UPPER("{}"), {{Active?}} = True())"""
-)
+PROJECTS_WHERE_COHORT_AND_ACTIVE = """AND(UPPER({{Cohort}}) = UPPER("{}"), {{Active?}} = True())"""
 
 
 def get_all_active_projects(cohort: str) -> list:
@@ -19,18 +18,16 @@ def get_all_active_projects(cohort: str) -> list:
     Returns:
         records (``list``): List of people records
     """
-    projects_table = Airtable(SMT_BASE_ID, PROJECTS_TABLE)
+    projects_table = Airtable(SMT_BASE_ID, PROJECTS_TABLE, api_key=os.environ["AIRTABLE_API_KEY"])
 
-    return projects_table.get_all(
-        formula=PROJECTS_WHERE_COHORT_AND_ACTIVE.format(cohort)
-    )
+    return projects_table.get_all(formula=PROJECTS_WHERE_COHORT_AND_ACTIVE.format(cohort))
 
 
 def assign_student_to_project(student: dict, project: dict, score: int):
     """
     Assigns a student to a project
     """
-    projects_table = Airtable(SMT_BASE_ID, PROJECTS_TABLE)
+    projects_table = Airtable(SMT_BASE_ID, PROJECTS_TABLE, api_key=os.environ["AIRTABLE_API_KEY"])
 
     project_id = project["id"]
     project_name = project["fields"]["Name"]
@@ -47,11 +44,7 @@ def assign_student_to_project(student: dict, project: dict, score: int):
             print(f"Adding {student_name} to team {project_name}")
             team_members.append(student_id)
     else:
-        print(
-            "Creating new team assigning {} to team {}".format(
-                student_name, project_name
-            )
-        )
+        print("Creating new team assigning {} to team {}".format(student_name, project_name))
         team_members = [student_id]
 
     print("Updating Airtable project record: {}".format(project_id))

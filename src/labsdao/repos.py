@@ -1,3 +1,6 @@
+# Core imports
+import os
+
 # Third party imports
 from airtable import Airtable
 
@@ -16,7 +19,7 @@ def get_all_active() -> list:
     Returns:
         records (``list``): An SMT record
     """
-    airtable = Airtable(LABBY_BASE_ID, "Product Github Repos")
+    airtable = Airtable(LABBY_BASE_ID, "Product Github Repos", api_key=os.environ["AIRTABLE_API_KEY"])
 
     return airtable.get_all(formula="Active = TRUE()")
 
@@ -28,7 +31,7 @@ def update(record_id, record_fields) -> None:
         record_id {[type]} -- [description]
         record_fields {[type]} -- [description]
     """
-    airtable = Airtable(LABBY_BASE_ID, "Product Github Repos")
+    airtable = Airtable(LABBY_BASE_ID, "Product Github Repos", api_key=os.environ["AIRTABLE_API_KEY"])
 
     airtable.update(record_id, record_fields)
 
@@ -40,7 +43,7 @@ def get_all_active_students() -> list:
     Returns:
         records (``list``): List of student records
     """
-    airtable = Airtable(LABS_BASE_ID, "Students")
+    airtable = Airtable(LABS_BASE_ID, "Students", api_key=os.environ["AIRTABLE_API_KEY"])
 
     return airtable.get_all(fields="Name", formula="{Cohort Active?} = TRUE()")
 
@@ -52,15 +55,13 @@ def get_students_by_sprint_retros_submission(days) -> list:
     Returns:
         records (``list``): List of student sprint retro records
     """
-    airtable = Airtable(LABS_BASE_ID, "Students")
+    airtable = Airtable(LABS_BASE_ID, "Students", api_key=os.environ["AIRTABLE_API_KEY"])
 
     formula = "AND({{Cohort Active?}} = TRUE(), {{Name}} != '', {{Days Since Last Student Sprint Retro}} > {})".format(
         days
     )
     return airtable.get_all(
-        fields=["Name", "Days Since Last Student Sprint Retro", "SMT Record ID"],
-        formula=formula,
-        max_records=20,
+        fields=["Name", "Days Since Last Student Sprint Retro", "SMT Record ID"], formula=formula, max_records=20,
     )
 
 
@@ -70,18 +71,16 @@ def get_all_product_github_repo_records():
     Returns:
         [type] -- [description]
     """
-    airtable = Airtable(LABBY_BASE_ID, "Product Github Repos")
+    airtable = Airtable(LABBY_BASE_ID, "Product Github Repos", api_key=os.environ["AIRTABLE_API_KEY"])
 
     return airtable.get_all()
 
 
-def upsert_repository_record(
-    repository_id: str, grade: str, badge_token: str, test_reporter_id: str
-):
+def upsert_repository_record(repository_id: str, grade: str, badge_token: str, test_reporter_id: str):
     """
     Updates the grade record for a repository
     """
-    airtable = Airtable(LABS_BASE_ID, LABS_CODE_CLIMATE_METRICS_TABLE)
+    airtable = Airtable(LABS_BASE_ID, LABS_CODE_CLIMATE_METRICS_TABLE, api_key=os.environ["AIRTABLE_API_KEY"])
 
     # Formulate the record to be upserted
     record = {
@@ -105,6 +104,4 @@ def upsert_repository_record(
         return
 
     # Multiple records found, panic!
-    raise Exception(
-        "Multiple records found for repository ID: {}".format(repository_id)
-    )
+    raise Exception("Multiple records found for repository ID: {}".format(repository_id))
