@@ -1,3 +1,6 @@
+# Core imports
+import os
+
 # Third party imports
 from airtable import Airtable
 
@@ -15,7 +18,7 @@ def get_all_quotes() -> list:
     Returns:
         records (``list``): List of quotes
     """
-    airtable = Airtable(HIPPOCAMPUS_BASE_ID, QUOTES_TABLE_NAME)
+    airtable = Airtable(HIPPOCAMPUS_BASE_ID, QUOTES_TABLE_NAME, api_key=os.environ["AIRTABLE_API_KEY"])
 
     return airtable.get_all(formula="Active = TRUE()")
 
@@ -27,6 +30,6 @@ def get_all_quote_channels() -> list:
     Returns:
         records (``list``): List of channels
     """
-    airtable = Airtable(HIPPOCAMPUS_BASE_ID, QUOTE_CHANNELS_TABLE_NAME)
+    airtable = Airtable(HIPPOCAMPUS_BASE_ID, QUOTE_CHANNELS_TABLE_NAME, api_key=os.environ["AIRTABLE_API_KEY"])
 
     return airtable.get_all(formula="Active = TRUE()")

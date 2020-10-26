@@ -1,4 +1,5 @@
 # Core imports
+import os
 
 # Third party imports
 from airtable import Airtable
@@ -18,6 +19,6 @@ def get_all_student_surveys(cohort: str) -> list:
     Returns:
         records (``list``): List of student survey records
     """
-    students_table = Airtable(SMT_BASE_ID, STUDENTS_SURVEYS_TABLE)
+    students_table = Airtable(SMT_BASE_ID, STUDENTS_SURVEYS_TABLE, api_key=os.environ["AIRTABLE_API_KEY"])
 
     return students_table.get_all(view=cohort)
