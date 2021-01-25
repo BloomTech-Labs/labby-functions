@@ -46,6 +46,9 @@ SURVEY_DATA_MODELING_WEIGHT = 100
 SURVEY_GIT_FIELD = "Git Expertise"
 SURVEY_GIT_WEIGHT = 100
 
+SURVEY_DOCKER_FIELD = "Docker Expertise"
+SURVEY_DOCKER_WEIGHT = 100
+
 SURVEY_STUDENT_TIMEZONE_FIELD = "Student Timezone Offset"
 SURVEY_STUDENT_TIMEZONE_WEIGHT = 150
 
@@ -102,10 +105,10 @@ def build_teams(event, context):
     print("Found {} projects".format(len(projects)))
 
     while surveys:
-        print("\n")
-        print("*" * 120)
-        print("Making pass with {} students left".format(len(surveys)))
-        print("*" * 120)
+        # print("\n")
+        # print("*" * 120)
+        # print("Making pass with {} students left".format(len(surveys)))
+        # print("*" * 120)
 
         best_assignment = __get_best_assignment()
 
@@ -118,14 +121,14 @@ def build_teams(event, context):
             project_name = best_assignment.project["fields"][PROJECT_NAME_FIELD]
             student_name = best_assignment.student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
-            print("\n")
-            print("*" * 120)
-            print(
-                "Assigning {} to project {} based on score: {}".format(
-                    student_name, project_name, best_assignment.score
-                )
-            )
-            print("*" * 120)
+            # print("\n")
+            # print("*" * 120)
+            # print(
+            #     "Assigning {} to project {} based on score: {}".format(
+            #         student_name, project_name, best_assignment.score
+            #     )
+            # )
+            # print("*" * 120)
 
             assignments.append(best_assignment)
 
@@ -174,7 +177,7 @@ def __get_best_assignment() -> AssignmentTuple:
     highscore = 0
     best_assignment = AssignmentTuple(None, None, None)
 
-    print(f"Finding best assignment for {len(projects)} projects and " f"{len(surveys)} students")
+    # print(f"Finding best assignment for {len(projects)} projects and " f"{len(surveys)} students")
 
     for project in projects:
         for student in surveys:
@@ -224,7 +227,7 @@ def __get_score(project: dict, student: dict) -> int:
     score = 0
 
     # print(f"Project {project}")
-    project_name = project["fields"][PROJECT_NAME_FIELD]
+    # project_name = project["fields"][PROJECT_NAME_FIELD]
     student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
     # print("Scoring {} for project {}".format(student_name, project_name))
 
@@ -248,31 +251,31 @@ def __get_score(project: dict, student: dict) -> int:
     # =======================================================================================
     # Check to see if the student has opted out of this product
     # =======================================================================================
-    print("\n== Product Opt Out Scoring ==")
+    # print("\n== Product Opt Out Scoring ==")
     student_opt_out_products = student["fields"].get(SURVEY_PRODUCT_OPT_OUT_FIELD, None)
     if student_opt_out_products:
-        print(f"Student {student_name} opted out of products: {student_opt_out_products}")
+        # print(f"Student {student_name} opted out of products: {student_opt_out_products}")
 
         product_name = project["fields"][PROJECT_PRODUCT_NAME_FIELD][0]
         if product_name.upper() in (x.upper() for x in student_opt_out_products):
-            print(f"Will not place {student_name} on product {product_name}")
+            # print(f"Will not place {student_name} on product {product_name}")
             return -10000
 
     # =========================================================================
     # Returns a score reflecting how far this student will push team size from
     # the average
     # =========================================================================
-    print("\n== Team Size Scoring ==")
+    # print("\n== Team Size Scoring ==")
     team_size_score = __calculate_team_size_score(project, student)
-    print("Adding team size score: {}".format(team_size_score))
+    # print("Adding team size score: {}".format(team_size_score))
     score += team_size_score
 
     # =======================================================================================
     # Returns a score reflecting how compatible the student is with other team members
     # =======================================================================================
-    print("\n== Team Compatibility Scoring ==")
+    # print("\n== Team Compatibility Scoring ==")
     team_compatibility_score = __calculate_student_to_team_compatibility_score(project, student)
-    print("Adding team compatibility score: {}".format(team_compatibility_score))
+    # print("Adding team compatibility score: {}".format(team_compatibility_score))
     score += team_compatibility_score
 
     # =======================================================================================
@@ -305,6 +308,12 @@ def __get_score(project: dict, student: dict) -> int:
         project, student, SURVEY_GIT_FIELD, 3.00, SURVEY_GIT_WEIGHT,
     )
     score += git_expertise_score
+
+    # print("\n== {} ==".format(SURVEY_DOCKER_FIELD))
+    docker_expertise_score = __calculate_score_for_average_goal(
+        project, student, SURVEY_DOCKER_FIELD, 3.00, SURVEY_DOCKER_WEIGHT,
+    )
+    score += docker_expertise_score
 
     # print("\n== {} ==".format(SURVEY_FRONTEND_FIELD))
     web_focus_score = __calculate_score_for_average_goal(
@@ -344,7 +353,7 @@ def __get_score(project: dict, student: dict) -> int:
 
 
 def __calculate_team_size_score(project: dict, student: dict) -> int:
-    project_name = project["fields"][PROJECT_NAME_FIELD]
+    # project_name = project["fields"][PROJECT_NAME_FIELD]
     student_track = student["fields"][SURVEY_TRACK_FIELD]
 
     # Calculate the current average team size for this track
@@ -352,11 +361,11 @@ def __calculate_team_size_score(project: dict, student: dict) -> int:
 
     # Calculate the size of the current team
     team_member_count = __count_team_assignments(project, student_track)
-    print(
-        "Project ({}) has {} members in the {} track; average is {}".format(
-            project_name, team_member_count, student_track, average_team_size
-        )
-    )
+    # print(
+    #     "Project ({}) has {} members in the {} track; average is {}".format(
+    #         project_name, team_member_count, student_track, average_team_size
+    #     )
+    # )
 
     score = math.ceil(TEAM_SIZE_WEIGHT * (average_team_size - team_member_count))
 
@@ -378,7 +387,7 @@ def __get_average_team_size_for_track(track: str) -> float:
 
     number_of_teams = len(teams_requiring_track)
 
-    print("Averaging number of assignments {} with number of teams {}".format(number_of_assignments, number_of_teams))
+    # print("Averaging number of assignments {} with number of teams {}".format(number_of_assignments, number_of_teams))
     average_team_size = float(number_of_assignments) / float(number_of_teams)
 
     return average_team_size
@@ -387,8 +396,8 @@ def __get_average_team_size_for_track(track: str) -> float:
 def __calculate_score_for_average_goal(
     project: dict, student: dict, survey_field: str, desired_average: float, weight: int
 ) -> int:
-    project_name = project["fields"][PROJECT_NAME_FIELD]
-    student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
+    # project_name = project["fields"][PROJECT_NAME_FIELD]
+    # student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
     # print(
     #     f"Calculating score for: Project({project_name}) - "
@@ -459,10 +468,10 @@ def __calculate_score_for_average_goal(
 
 
 def __calculate_student_to_team_compatibility_score(project: dict, student: dict) -> int:
-    project_name = project["fields"][PROJECT_NAME_FIELD]
+    # project_name = project["fields"][PROJECT_NAME_FIELD]
     student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
-    print("Calculating compatibility score for: Project({}) - Student({})".format(project_name, student_name))
+    # print("Calculating compatibility score for: Project({}) - Student({})".format(project_name, student_name))
 
     # Check to see if the student responded to the survey, question
     # print(student['fields'])
@@ -471,7 +480,7 @@ def __calculate_student_to_team_compatibility_score(project: dict, student: dict
         return 0
 
     student_not_compatible_list = student["fields"][SURVEY_INCOMPATIBLE_STUDENT_NAMES_FIELD]
-    print("Checking incompatibility list for student {}: {}".format(student_name, student_not_compatible_list))
+    # print("Checking incompatibility list for student {}: {}".format(student_name, student_not_compatible_list))
 
     # Get the list of current assignments for the project team
     team_assignments = __get_team_assignments(project)
@@ -479,13 +488,13 @@ def __calculate_student_to_team_compatibility_score(project: dict, student: dict
     for assignment in team_assignments:
         assigned_student_name = assignment.student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
-        print("Checking to see if {} in {}".format(assigned_student_name, student_not_compatible_list))
+        # print("Checking to see if {} in {}".format(assigned_student_name, student_not_compatible_list))
         if assigned_student_name in student_not_compatible_list:
-            print(
-                f"*** Student {student_name} says they don't want to work with one of "
-                f"({student_not_compatible_list}), who are already assigned to project "
-                f"{project_name}"
-            )
+            # print(
+            #     f"*** Student {student_name} says they don't want to work with one of "
+            #     f"({student_not_compatible_list}), who are already assigned to project "
+            #     f"{project_name}"
+            # )
 
             # Definitely not a good fit for the team
             return -100000
@@ -494,11 +503,11 @@ def __calculate_student_to_team_compatibility_score(project: dict, student: dict
         if SURVEY_INCOMPATIBLE_STUDENT_NAMES_FIELD in assignment.student["fields"]:
             for incompatibleStudent in assignment.student["fields"][SURVEY_INCOMPATIBLE_STUDENT_NAMES_FIELD]:
                 if student_name.upper() == incompatibleStudent.upper():
-                    print(
-                        f"*** Assigned student {assigned_student_name} says they don't "
-                        f"want to work with {student_name} one of whom is assigned to "
-                        f"project {project_name}"
-                    )
+                    # print(
+                    #     f"*** Assigned student {assigned_student_name} says they don't "
+                    #     f"want to work with {student_name} one of whom is assigned to "
+                    #     f"project {project_name}"
+                    # )
 
                     # Definitely not a good fit for the team
                     return -100000
@@ -521,7 +530,7 @@ def __calculate_ethnic_diversity_score(project: dict, student: dict) -> int:
     project_name = project["fields"][PROJECT_NAME_FIELD]
     student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
-    print("Calculating ethnic pairing score for: Project({}) - Student({})".format(project_name, student_name))
+    # print("Calculating ethnic pairing score for: Project({}) - Student({})".format(project_name, student_name))
 
     # Get the ethnicities specified by the student
     student_ethnicities = student["fields"].get(SURVEY_ETHNICITIES_FIELD, None)
@@ -600,7 +609,7 @@ def __calculate_gender_diversity_score(project: dict, student: dict) -> int:
     project_name = project["fields"][PROJECT_NAME_FIELD]
     student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
-    print("Calculating gender pairing score for: Project({}) - Student({})".format(project_name, student_name))
+    # print("Calculating gender pairing score for: Project({}) - Student({})".format(project_name, student_name))
 
     # Get the gender specified by the student
     student_gender = student["fields"].get(SURVEY_GENDER_FIELD, None)
