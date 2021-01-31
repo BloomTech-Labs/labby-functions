@@ -88,6 +88,11 @@ functions:
     handler: ${env:HANDLER_PATH_PREFIX, ""}teambuilding/handler.build_teams
     description: Builds teams automatically
 
+  generate_reviewer_csv:
+    module: src
+    handler: ${env:HANDLER_PATH_PREFIX, ""}searchlight/handler.generate_reviewer_csv
+    description: Generate CSV for import into Searchlight for Labs peer reviews
+
   codeclimate_enqueue_all_product_repos:
     module: src
     handler: labscodeclimate/handler.enqueue_all_product_repos
