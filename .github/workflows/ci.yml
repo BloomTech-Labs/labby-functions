@@ -1,4 +1,4 @@
-name: Pull Request to Master
+name: Pull Request to main branch
 
 on:
   pull_request:
@@ -11,11 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@main
 
       - uses: actions/setup-python@v1
         with:
-          python-version: 3.7
+          python-version: 3.8
 
       - uses: dschep/install-pipenv-action@v1
 
