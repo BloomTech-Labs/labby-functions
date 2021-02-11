@@ -37,7 +37,9 @@ def generate_labs_reviewer_csv(event, context):
             csv_row = {}
             csv_row["first_name"] = reviewee["fields"]["First Name"][0]
             csv_row["last_name"] = reviewee["fields"]["Last Name"][0]
-            csv_row["work_email"] = reviewee["fields"]["Lambda Email"][0]
+
+            # The data sometimes is missing the student's email address
+            csv_row["work_email"] = reviewee["fields"].get("Lambda Email", ["MISSING EMAIL"])[0]
 
             csv_row["function"] = ""
             csv_row["title"] = "Student"
@@ -52,7 +54,11 @@ def generate_labs_reviewer_csv(event, context):
                     # Create the columns for the reviewers
                     csv_row["reviewer_first_name_" + str(reviewer_position)] = reviewer["fields"]["First Name"][0]
                     csv_row["reviewer_last_name_" + str(reviewer_position)] = reviewer["fields"]["Last Name"][0]
-                    csv_row["reviewer_email_" + str(reviewer_position)] = reviewer["fields"]["Lambda Email"][0]
+
+                    # The data sometimes is missing the student's email address
+                    csv_row["reviewer_email_" + str(reviewer_position)] = reviewer["fields"].get(
+                        "Lambda Email", ["MISSING EMAIL"]
+                    )[0]
 
                     reviewer_position += 1
 
