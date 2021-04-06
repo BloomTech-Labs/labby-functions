@@ -10,7 +10,11 @@ SMT_BASE_ID = "appvMqcwCQosrsHhM"
 STUDENTS_SURVEYS_TABLE = "Labs - TBSurveys"
 STUDENTS_TABLE = "STUDENTS"
 
-STUDENTS_TABLE_BW_VIEWS = {"FT": "BW Students (FT)", "PTPT": "BW Students (PTPT)", "PTCT": "BW Students (PTCT)"}
+STUDENTS_TABLE_BW_VIEWS = {
+    "FT": "[DND] Current BW FT",
+    "PTPT": "[DND] Current BW PTPT",
+    "PTCT": "[DND] Current BW PTCT",
+}
 
 
 def get_all_bw_students(bw_section: str) -> list:
