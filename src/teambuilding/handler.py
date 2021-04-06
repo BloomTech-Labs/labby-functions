@@ -43,6 +43,9 @@ SURVEY_WEB_DESIGN_WEIGHT = 100
 SURVEY_DATA_MODELING_FIELD = "How comfortable are you at data modeling?"
 SURVEY_DATA_MODELING_WEIGHT = 100
 
+SURVEY_UX_INTEREST_FIELD = "UX Interest"
+SURVEY_UX_INTEREST_WEIGHT = 200
+
 SURVEY_GIT_FIELD = "Git Expertise"
 SURVEY_GIT_WEIGHT = 100
 
@@ -118,8 +121,8 @@ def build_teams(event, context):
             print("!!!Unable to match student: {}", surveys.pop())
             print("*" * 120)
         else:
-            project_name = best_assignment.project["fields"][PROJECT_NAME_FIELD]
-            student_name = best_assignment.student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
+            # project_name = best_assignment.project["fields"][PROJECT_NAME_FIELD]
+            # student_name = best_assignment.student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
             # print("\n")
             # print("*" * 120)
@@ -228,7 +231,7 @@ def __get_score(project: dict, student: dict) -> int:
 
     # print(f"Project {project}")
     # project_name = project["fields"][PROJECT_NAME_FIELD]
-    student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
+    # student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
     # print("Scoring {} for project {}".format(student_name, project_name))
 
     # =======================================================================================
@@ -303,6 +306,12 @@ def __get_score(project: dict, student: dict) -> int:
     # =======================================================================================
     # These calculations try to force the team to average particular skills/traits
     # =======================================================================================
+    # print("\n== {} ==".format(UX_INTEREST_FIELD))
+    ux_interest_score = __calculate_score_for_average_goal(
+        project, student, SURVEY_UX_INTEREST_FIELD, 3.00, SURVEY_UX_INTEREST_WEIGHT,
+    )
+    score += ux_interest_score
+
     # print("\n== {} ==".format(SURVEY_GIT_FIELD))
     git_expertise_score = __calculate_score_for_average_goal(
         project, student, SURVEY_GIT_FIELD, 3.00, SURVEY_GIT_WEIGHT,
@@ -527,8 +536,8 @@ def __calculate_ethnic_diversity_score(project: dict, student: dict) -> int:
     Returns:
         A score
     """
-    project_name = project["fields"][PROJECT_NAME_FIELD]
-    student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
+    # project_name = project["fields"][PROJECT_NAME_FIELD]
+    # student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
     # print("Calculating ethnic pairing score for: Project({}) - Student({})".format(project_name, student_name))
 
@@ -606,8 +615,8 @@ def __calculate_gender_diversity_score(project: dict, student: dict) -> int:
     Returns:
         A score
     """
-    project_name = project["fields"][PROJECT_NAME_FIELD]
-    student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
+    # project_name = project["fields"][PROJECT_NAME_FIELD]
+    # student_name = student["fields"][SURVEY_STUDENT_NAME_FIELD][0]
 
     # print("Calculating gender pairing score for: Project({}) - Student({})".format(project_name, student_name))
 
