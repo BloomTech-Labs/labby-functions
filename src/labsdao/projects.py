@@ -34,7 +34,7 @@ def assign_student_to_project(student: dict, project: dict, score: int):
     current_project_record = projects_table.get(project_id)
 
     student_id = student["fields"]["What is your name?"][0]
-    student_name = student["fields"]["What is your name?"][0]
+    student_name = student["fields"]["Student Name"][0]
 
     team_members = []
     if "Team Members" in current_project_record["fields"]:
@@ -48,4 +48,4 @@ def assign_student_to_project(student: dict, project: dict, score: int):
         team_members = [student_id]
 
     print("Updating Airtable project record: {}".format(project_id))
-    projects_table.update(project["id"], {"Team Members": team_members})
+    projects_table.update(project_id, {"Team Members": team_members})
