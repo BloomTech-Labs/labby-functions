@@ -43,6 +43,9 @@ SURVEY_WEB_DESIGN_WEIGHT = 100
 SURVEY_DATA_MODELING_FIELD = "How comfortable are you at data modeling?"
 SURVEY_DATA_MODELING_WEIGHT = 100
 
+SURVEY_UX_INTEREST_FIELD = "UX Interest"
+SURVEY_UX_INTEREST_WEIGHT = 200
+
 SURVEY_GIT_FIELD = "Git Expertise"
 SURVEY_GIT_WEIGHT = 100
 
@@ -303,6 +306,12 @@ def __get_score(project: dict, student: dict) -> int:
     # =======================================================================================
     # These calculations try to force the team to average particular skills/traits
     # =======================================================================================
+    # print("\n== {} ==".format(UX_INTEREST_FIELD))
+    ux_interest_score = __calculate_score_for_average_goal(
+        project, student, SURVEY_UX_INTEREST_FIELD, 3.00, SURVEY_UX_INTEREST_WEIGHT,
+    )
+    score += ux_interest_score
+
     # print("\n== {} ==".format(SURVEY_GIT_FIELD))
     git_expertise_score = __calculate_score_for_average_goal(
         project, student, SURVEY_GIT_FIELD, 3.00, SURVEY_GIT_WEIGHT,
