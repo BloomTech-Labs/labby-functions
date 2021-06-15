@@ -1,11 +1,6 @@
 # Labby
 
-[![Maintainability](https://api.codeclimate.com/v1/badges/f9310d8480b61b88f0d4/maintainability)](https://codeclimate.com/github/Lambda-School-Labs/labby-functions/maintainability)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/f9310d8480b61b88f0d4/test_coverage)](https://codeclimate.com/github/Lambda-School-Labs/labby-functions/test_coverage)
-
-## Overview
-
-Labby is a growing collection of automation functions that support Lambda Labs operations.
+Labby is a growing collection of automation functions that support Lambda School Labs operations.
 
 ## Architecture
 
@@ -17,16 +12,17 @@ The packages in Labby are broken up by the various services that Labby manages. 
 
 See the README in each package for more details.
 
-- Github: Manages provisioning and access to repositories based on active projects and team membership.
-- Code Climate: Labs uses Code Climate to assess code quality, Labby helps integrate with Code Climate and gathers metrics.
-- Slack: Allows Labby to interact with students and staff via Slack
-- Mock Interviews: Labby helps with the Labs Mock Interview process
-- Peer Reviews: Labby monitors peer review submissions (or lack thereof) to remind students and staff to submit their reviews.
-- Labs Data: Much of Labby's activities are driven by data produced by operational activities in Labs.
+- `labsaws`: For talking to the AWS API
+- `labscodeclimate`: For talking to the Code Climate API
+- `labssonarcloud`: For talking to the Sonar Cloud API
+- `labsdao`: A data access layer for retrieving various Labs-specific entities (e.g. students, projects)
+- `labsslack`: For talking to the Slack API
+- `labssearchlight`: For talking to the Searchlight API
+- `teambuilding`: The Labs Team Builder algorithm
 
 ## Configuration
 
-Labby needs access to all sorts of APIs and data stores, which require secrets. These secrets are managed via AWS Secrets Manager.
+Labby needs access to all sorts of APIs and data stores, which require secrets. All secrets are managed via AWS Secrets Manager.
 
 Adding a secret:
 
@@ -67,21 +63,13 @@ Labby interacts with Airtable using an [API key](https://airtable.com/api):
 
 The `assets` folder contains various static assets for use by the functions. Be aware that during deployment the `serverless-s3-deploy` plugin will automatically ship _everything in the assets folder_ to a _public, readable by the whole wide world web_ S3 bucket.
 
-## Environment
-
-You're going to need to create a `.env.yml` file in the root after you clone. It must contain:
-
-- GITHUB_ORG_NAME: The name of the GitHub org for Labs student product and project repos
-- GITHUB_APP_INTEGRATION_ID: The GitHub App Integration ID is the ID of your GitHub App. You can find it in the "About" section in the "General" tab of your GitHub App (Called App ID).
-- GITHUB_APP_ORG_INSTALLATION_ID: For talking to the Github API
-- GITHUB_APP_PRIVATE_KEY: The Github app private key
-- CODE_CLIMATE_ACCESS_TOKEN: An API token for talking to Code Climate
-- AIRTABLE_API_KEY: An API token for talking to AirTable
-- SLACK_API_TOKEN: An API token for talking to Slack
-- STUDENT_ACCOUNT_OU_ID: The ID of the student account OU (e.g. "ou-1234-12345678")
-- ROOT_ACCOUNT_ID: The ID of the root account (e.g. 123456789123)
-
 ## Running Local
+
+### pyenv + pipenv
+
+This project uses pyenv for ensuring Python versions are consistent and pipenv for handling dependencies.
+
+### AWS Profiles
 
 > If you are using aws profiles then you must have an env var AWS_PROFILE set to the profile name. (might as well add AWS_REGION to be safe)
 >
