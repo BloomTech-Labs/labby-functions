@@ -49,18 +49,18 @@ provider:
 
   environment:
     # Labby's Github App ID and Private Key for authenticating as an app
-    GITHUB_APP_INTEGRATION_ID: ${ssm:/aws/reference/secretsmanager/labby-github-app-integration-id~true}
-    GITHUB_APP_PRIVATE_KEY: ${ssm:/aws/reference/secretsmanager/labby-github-app-private-key~true}
+    # GITHUB_APP_INTEGRATION_ID: ${ssm:/aws/reference/secretsmanager/labby-github-app-integration-id~true}
+    # GITHUB_APP_PRIVATE_KEY: ${ssm:/aws/reference/secretsmanager/labby-github-app-private-key~true}
 
     # ID of the Labby installation on the Lambda-School-Labs org
     #  - TODO: This should be a list of installations
     #  - TODO: This doesn't need to be a secret
-    GITHUB_APP_ORG_INSTALLATION_ID: ${ssm:/aws/reference/secretsmanager/labby-github-app-org-installation-id~true}
+    # GITHUB_APP_ORG_INSTALLATION_ID: ${ssm:/aws/reference/secretsmanager/labby-github-app-org-installation-id~true}
 
     # The org that Labby works with
     #  - TODO: Someday Labby should be able to work with many orgs
     #  - TODO: This doesn't need to be a secret
-    GITHUB_ORG_NAME: ${file(.env.yml):GITHUB_ORG_NAME}
+    # GITHUB_ORG_NAME: ${ssm:/aws/reference/secretsmanager/labby-github-org-name~true}
 
     # A personal access token for Labby to use when it can't do something as the Github App
     # Note: This is temporary until the Github App API catches up with the personal API
@@ -70,18 +70,19 @@ provider:
     AIRTABLE_API_KEY: ${ssm:/aws/reference/secretsmanager/labby-airtable-api-key~true}
 
     # API key for Slack
-    SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-oauth-token~true}
+    # SLACK_API_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-slack-oauth-token~true}
 
 functions:
-  check_account_access:
-    module: src
-    handler: ${env:HANDLER_PATH_PREFIX, ""}labsaws/check_account_access.handler
-    description: Ensures that Labby has access to all student accounts
-    environment:
-      # The ID of the root account
-      ROOT_ACCOUNT_ID: ${file(.env.yml):ROOT_ACCOUNT_ID}
-      # The ID of the OU that student AWS accounts are attached to
-      STUDENT_ACCOUNT_OU_ID: ${file(.env.yml):STUDENT_ACCOUNT_OU_ID}
+  # Note: Temporarily disabled
+  # check_account_access:
+  #   module: src
+  #   handler: ${env:HANDLER_PATH_PREFIX, ""}labsaws/check_account_access.handler
+  #   description: Ensures that Labby has access to all student accounts
+  #   environment:
+  #     # The ID of the root account
+  #     ROOT_ACCOUNT_ID: ${file(.env.yml):ROOT_ACCOUNT_ID}
+  #     # The ID of the OU that student AWS accounts are attached to
+  #     STUDENT_ACCOUNT_OU_ID: ${file(.env.yml):STUDENT_ACCOUNT_OU_ID}
 
   build_teams:
     module: src
@@ -98,28 +99,31 @@ functions:
     handler: ${env:HANDLER_PATH_PREFIX, ""}searchlight/handler.generate_labs_reviewer_csv
     description: Generate CSV for import into Searchlight for Labs peer reviews
 
-  codeclimate_enqueue_all_product_repos:
-    module: src
-    handler: labscodeclimate/handler.enqueue_all_product_repos
-    description: Gets a list of all current product repositories and queues them up in SQS for processing.
-    timeout: 300
-    environment:
-      CODECLIMATE_REPO_WORKER_SQS_URL: !Ref QueueCodeClimateRepoWorkerQueue
-      GITHUB_REPO_CONFIG_WORKER_SQS_URL: !Ref QueueGithubRepoConfigurationWorker
-    events:
-      - schedule: rate(90 minutes)
+  # Note: Temporarily disabled
+  # codeclimate_enqueue_all_product_repos:
+  #   module: src
+  #   handler: labscodeclimate/handler.enqueue_all_product_repos
+  #   description: Gets a list of all current product repositories and queues them up in SQS for processing.
+  #   timeout: 300
+  #   environment:
+  #     CODECLIMATE_REPO_WORKER_SQS_URL: !Ref QueueCodeClimateRepoWorkerQueue
+  #     GITHUB_REPO_CONFIG_WORKER_SQS_URL: !Ref QueueGithubRepoConfigurationWorker
+  #   events:
+  #     - schedule: rate(90 minutes)
 
-  codeclimate_process_repository_batch:
-    module: src
-    handler: labscodeclimate/handler.process_repository_batch
-    description: Processes a batch of repository records from GitHub
-    environment:
-      CODE_CLIMATE_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-code-climate-access-token~true}
-    events:
-      - sqs:
-          arn: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
-          batchSize: 5
+  # Note: Temporarily disabled
+  # codeclimate_process_repository_batch:
+  #   module: src
+  #   handler: labscodeclimate/handler.process_repository_batch
+  #   description: Processes a batch of repository records from GitHub
+  #   environment:
+  #     CODE_CLIMATE_ACCESS_TOKEN: ${ssm:/aws/reference/secretsmanager/labby-code-climate-access-token~true}
+  #   events:
+  #     - sqs:
+  #         arn: !GetAtt QueueCodeClimateRepoWorkerQueue.Arn
+  #         batchSize: 5
 
+  # Note: Temporarily disabled
   # github_configuration_worker:
   #   module: src
   #   handler: labsgithub/handler.repo_configuration_worker
@@ -129,13 +133,14 @@ functions:
   #         arn: !GetAtt QueueGithubRepoConfigurationWorker.Arn
   #         batchSize: 5
 
-  slack_drop_quotes:
-    module: src
-    handler: labsslack/quotes.drop_quotes
-    description: Drops quotes into specified Slack channels.
-    events:
-      # See https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
-      - schedule: cron(0 15 ? * MON-FRI *)
+  # Note: Temporarily disabled
+  # slack_drop_quotes:
+  #   module: src
+  #   handler: labsslack/quotes.drop_quotes
+  #   description: Drops quotes into specified Slack channels.
+  #   events:
+  #     # See https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html
+  #     - schedule: cron(0 15 ? * MON-FRI *)
 
 resources:
   Resources:
@@ -216,48 +221,6 @@ resources:
         QueueName: "GithubRepoConfigurationWorker"
         # Note: This must be greater than the timeout of the associated Lambda function
         VisibilityTimeout: 360
-
-    SecretLabbyGithubAppIntegrationID:
-      Type: AWS::SecretsManager::Secret
-      Properties:
-        Name: labby-github-app-integration-id
-        Description: The App ID of the Labby app from the About page
-        SecretString: ${file(.env.yml):GITHUB_APP_INTEGRATION_ID}
-
-    SecretLabbyGithubAppPrivateKey:
-      Type: AWS::SecretsManager::Secret
-      Properties:
-        Name: labby-github-app-private-key
-        Description: A private key that can be used to authenticate a Labby installation
-        SecretString: ${file(.env.yml):GITHUB_APP_PRIVATE_KEY}
-
-    SecretLabbyGithubAppOrgInstallationID:
-      Type: AWS::SecretsManager::Secret
-      Properties:
-        Name: labby-github-app-org-installation-id
-        Description: The ID of the Labby installation on the Lambda-School-Labs org
-        SecretString: ${file(.env.yml):GITHUB_APP_ORG_INSTALLATION_ID}
-
-    SecretLabbyCodeClimateAccessToken:
-      Type: AWS::SecretsManager::Secret
-      Properties:
-        Name: labby-code-climate-access-token
-        Description: Access token for Code Climate
-        SecretString: ${file(.env.yml):CODE_CLIMATE_ACCESS_TOKEN}
-
-    SecretLabbyAirtableApiKey:
-      Type: AWS::SecretsManager::Secret
-      Properties:
-        Name: labby-airtable-api-key
-        Description: API key for Airtable
-        SecretString: ${file(.env.yml):AIRTABLE_API_KEY}
-
-    SecretLabbySlackOAuthToken:
-      Type: AWS::SecretsManager::Secret
-      Properties:
-        Name: labby-slack-oauth-token
-        Description: OAuth token for Slack
-        SecretString: ${file(.env.yml):SLACK_API_TOKEN}
 
     # A bucket for storing public-facing assets
     PublicAssetBucket:
