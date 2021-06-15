@@ -1,9 +1,11 @@
+import os
 import unittest
 import unittest.mock as mock
 
 import labsdao.quotes
 
 
+@mock.patch.dict(os.environ, {"AIRTABLE_API_KEY": "AFAKEKEY"})
 @mock.patch("airtable.Airtable.__init__", mock.Mock(return_value=None))
 @mock.patch("airtable.Airtable.get_all")
 class TestGetAllQuotes(unittest.TestCase):
@@ -31,6 +33,7 @@ class TestGetAllQuotes(unittest.TestCase):
         self.assertEqual(quotes_in, quotes_out)
 
 
+@mock.patch.dict(os.environ, {"AIRTABLE_API_KEY": "AFAKEKEY"})
 @mock.patch("airtable.Airtable.__init__", mock.Mock(return_value=None))
 @mock.patch("airtable.Airtable.get_all")
 class TestGetAllQuoteChannels(unittest.TestCase):

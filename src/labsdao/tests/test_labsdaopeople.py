@@ -1,24 +1,26 @@
+import os
 import unittest
 import unittest.mock as mock
 
 import labsdao.people
 
 
+@mock.patch.dict(os.environ, {"AIRTABLE_API_KEY": "AFAKEKEY"})
 @mock.patch("airtable.Airtable.__init__", mock.Mock(return_value=None))
 @mock.patch("airtable.Airtable.get")
-class TestGetSMTRecord(unittest.TestCase):
+class TestGetStudent(unittest.TestCase):
     def test_no_record(self, mock_airtable_get):
 
         # No SMT record ID
         mock_airtable_get.return_value = None
 
-        labsdao.people.get_smt_record.cache_clear()
+        labsdao.people.get_student.cache_clear()
 
-        smt_record = labsdao.people.get_smt_record("12345")
+        student_record = labsdao.people.get_student("12345")
 
         mock_airtable_get.assert_called_once()
 
-        self.assertEqual(smt_record, None)
+        self.assertEqual(student_record, None)
 
     def test_happy(self, mock_airtable_get):
 
@@ -26,13 +28,16 @@ class TestGetSMTRecord(unittest.TestCase):
         record_in = "Something"
         mock_airtable_get.return_value = record_in
 
-        record_out = labsdao.people.get_smt_record("12345")
+        labsdao.people.get_student.cache_clear()
+
+        student_record = labsdao.people.get_student("12345")
 
         mock_airtable_get.assert_called_once()
 
-        self.assertEqual(record_in, record_out)
+        self.assertEqual(record_in, student_record)
 
 
+@mock.patch.dict(os.environ, {"AIRTABLE_API_KEY": "AFAKEKEY"})
 @mock.patch("airtable.Airtable.__init__", mock.Mock(return_value=None))
 @mock.patch("airtable.Airtable.get_all")
 class TestGetAllQuoteChannels(unittest.TestCase):

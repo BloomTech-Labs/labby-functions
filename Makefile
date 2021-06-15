@@ -11,7 +11,7 @@ install-dev:
 coverage:
 	@printf "Running coverage"																	&& \
 	 rm -f .coverage coverage.xml																&& \
-	 pipenv run coverage run -m unittest discover -s tests
+	 pipenv run coverage run -m unittest discover -v -s ./src -p "test_*.py" || true
 
 .PHONY: coverage-xml
 coverage-xml: coverage
