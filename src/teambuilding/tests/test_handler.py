@@ -287,4 +287,4 @@ class TestCalculateStudentToTeamCompatibilityScore(unittest.TestCase):
         )
 
         self.assertEquals(project_01_score, 0)
-        self.assertEquals(project_01_score, 0)
+        self.assertEquals(project_02_score, 0)
