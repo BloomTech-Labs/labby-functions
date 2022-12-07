@@ -3,7 +3,7 @@
   "description": "Labby automation",
   "version": "0.5.0",
   "devDependencies": {
-    "serverless": "^1.70.1",
+    "serverless": "^3.25.1",
     "serverless-cloudside-plugin": "^1.0.3",
     "serverless-dotenv-plugin": "^2.4.2",
     "serverless-offline": "^6.1.5",
